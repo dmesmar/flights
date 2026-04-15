@@ -86,6 +86,11 @@ document.getElementById('dayBtnsRow')?.addEventListener('click', (e) => {
   btn.classList.toggle('active');
 });
 
+/* ── Country display helper ── */
+function countryLabel(code) {
+  return (COUNTRY_FLAGS[code] || '') + ' ' + (t('country_' + code) || code);
+}
+
 /* ═══════════════════════════════════════════
    AIRPORT SELECTOR FACTORY
 ═══════════════════════════════════════════ */
@@ -135,7 +140,7 @@ function createAirportSelector(selectorEl, tagsEl) {
         a.name.toLowerCase().includes(q) ||
         a.city.toLowerCase().includes(q) ||
         a.country.toLowerCase().includes(q) ||
-        a.countryName.toLowerCase().includes(q)
+        countryLabel(a.country).toLowerCase().includes(q)
       );
     });
 
@@ -147,7 +152,7 @@ function createAirportSelector(selectorEl, tagsEl) {
 
     const byCountry = {};
     filtered.forEach(a => {
-      if (!byCountry[a.country]) byCountry[a.country] = { name: a.countryName, airports: [] };
+      if (!byCountry[a.country]) byCountry[a.country] = { name: countryLabel(a.country), airports: [] };
       byCountry[a.country].airports.push(a);
     });
 
@@ -247,7 +252,7 @@ function createAirportSelector(selectorEl, tagsEl) {
       const info = airportInfo(iata);
       const tag = document.createElement('div');
       tag.className = 'tag';
-      tag.title = `${info.city} — ${info.countryName}`;
+      tag.title = `${info.city} — ${countryLabel(info.country)}`;
       tag.innerHTML = `${iata}<button type="button" aria-label="${t('tag_remove_aria', iata)}">&times;</button>`;
       tag.querySelector('button').addEventListener('click', () => removeAirport(iata));
       internalTagsEl.appendChild(tag);
