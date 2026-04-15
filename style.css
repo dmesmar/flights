@@ -235,10 +235,18 @@ select:focus {
   flex-direction: column;
 }
 
-.airport-dropdown.open { display: flex; }
+.airport-dropdown.open {
+  display: flex;
+  animation: ddOpen 0.14s ease;
+}
+
+@keyframes ddOpen {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .dropdown-search-wrap {
-  padding: 0.5rem 0.6rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -259,31 +267,54 @@ select:focus {
 .dropdown-search-input:focus { border-color: var(--accent); }
 
 .dropdown-list {
-  max-height: 220px;
+  max-height: 320px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .airport-option {
-  padding: 0.55rem 0.85rem;
+  padding: 0.65rem 0.85rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.6rem;
   font-size: 0.9rem;
   transition: background 0.15s;
+  outline: none;
 }
 
 .airport-option:hover { background: var(--dropdown-hover); }
+.airport-option:focus-visible {
+  background: var(--dropdown-hover);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
 
 .airport-option .iata {
   font-weight: 700;
   font-size: 0.85rem;
   color: var(--accent);
   min-width: 36px;
+  flex-shrink: 0;
 }
 
-.airport-option .airport-name { color: var(--text-muted); font-size: 0.82rem; flex: 1; }
+.airport-option .airport-city {
+  color: var(--text);
+  font-size: 0.9rem;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.airport-option .airport-name {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 42%;
+  flex-shrink: 0;
+}
 
 .airport-option.selected { background: var(--tag-bg, rgba(99,102,241,.08)); }
 .airport-option.selected .iata { opacity: 0.6; }

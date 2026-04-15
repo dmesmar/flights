@@ -177,7 +177,8 @@ function createAirportSelector(selectorEl, tagsEl) {
         const el = document.createElement('div');
         el.className = 'airport-option' + (selected.has(a.iata) ? ' selected' : '') + (allowed ? '' : ' no-route');
         el.setAttribute('role', 'option');
-        el.innerHTML = `<span class="iata">${a.iata}</span><span class="airport-name">${a.city} \u2014 ${a.name}</span>${selected.has(a.iata) ? '<span class="option-check">\u2713</span>' : ''}`;
+        el.setAttribute('tabindex', '-1');
+        el.innerHTML = `<span class="iata">${a.iata}</span><span class="airport-city">${a.city}</span><span class="airport-name">${a.name}</span>${selected.has(a.iata) ? '<span class="option-check">\u2713</span>' : ''}`;
         el.addEventListener('mousedown', (e) => {
           e.preventDefault();
           if (!allowed) return;
@@ -186,6 +187,31 @@ function createAirportSelector(selectorEl, tagsEl) {
             renderList(searchInput.value);
           } else {
             addAirport(a);
+          }
+        });
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let next = el.nextElementSibling;
+            while (next && !next.classList.contains('airport-option')) next = next.nextElementSibling;
+            if (next) next.focus();
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let prev = el.previousElementSibling;
+            while (prev && !prev.classList.contains('airport-option')) prev = prev.previousElementSibling;
+            if (prev) prev.focus(); else searchInput.focus();
+          } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (!allowed) return;
+            if (selected.has(a.iata)) {
+              removeAirport(a.iata);
+              renderList(searchInput.value);
+            } else {
+              addAirport(a);
+            }
+          } else if (e.key === 'Escape') {
+            closeDropdown();
+            trigger.focus();
           }
         });
         list.appendChild(el);
@@ -250,7 +276,12 @@ function createAirportSelector(selectorEl, tagsEl) {
   searchInput.addEventListener('input', () => renderList(searchInput.value));
 
   searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeDropdown();
+    if (e.key === 'Escape') { closeDropdown(); trigger.focus(); }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const firstOption = list.querySelector('.airport-option:not(.no-route)');
+      if (firstOption) firstOption.focus();
+    }
   });
 
   // Prevent clicks inside dropdown from bubbling to document
@@ -299,10 +330,7 @@ function isDirectOnly() {
   return document.querySelector('.stop-btn.active')?.dataset.value === '0';
 }
 
-selectorFrom.setGetAllowed(a => {
-  if (!iataRoutes || !isDirectOnly()) return true;
-  return Object.prototype.hasOwnProperty.call(iataRoutes, a.iata);
-});
+selectorFrom.setGetAllowed(() => true);
 
 selectorTo.setGetAllowed(a => {
   if (!iataRoutes || !isDirectOnly()) return true;
