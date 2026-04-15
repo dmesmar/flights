@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flights Search</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span class="logo-icon">&#x2708;&#xFE0F;</span>
+      Flights Search
+    </div>
+    <button class="theme-toggle" id="devModeToggle" aria-label="Modo desarrollador" title="Modo desarrollador" data-i18n-aria="devMode_aria" data-i18n-title="devMode_aria">
+      <span id="devModeIcon">&#x1F527;</span>
+      <span id="devModeLabel">Dev</span>
+    </button>
+    <button class="theme-toggle" id="langToggle" aria-label="Switch to English">
+      <span>&#x1F310;</span>
+      <span id="langLabel">EN</span>
+    </button>
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema" data-i18n-aria="theme_aria">
+      <span id="themeIcon">&#x1F319;</span>
+      <span id="themeLabel">Claro</span>
+    </button>
+  </header>
+
+  <!-- Main -->
+  <main>
+
+    <!-- Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" data-tab="search">&#x2708;&#xFE0F; <span data-i18n="tab_search_text">Búsqueda</span></button>
+      <button class="tab-btn" data-tab="saved">&#x2665;&#xFE0F; <span data-i18n="tab_saved_text">Guardados</span> <span class="saved-count" id="savedCount"></span></button>
+      <button class="tab-btn" data-tab="logs" id="tabLogs" style="display:none">&#x1F4CB; <span data-i18n="tab_logs_text">Logs</span></button>
+    </div>
+
+    <!-- Search tab -->
+    <div class="tab-panel" id="tab-search">
+    <div class="search-card">
+      <h2 data-i18n="search_title">Buscar vuelos</h2>
+
+      <form id="searchForm" novalidate>
+
+        <!-- Dates -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="fechaIni" data-i18n="label_date_from">Fecha inicio</label>
+            <input type="date" id="fechaIni" required />
+          </div>
+          <div class="form-group">
+            <label for="fechaFin" data-i18n="label_date_to">Fecha fin</label>
+            <input type="date" id="fechaFin" required />
+          </div>
+        </div>
+
+        <!-- Day of week filter -->
+        <div class="form-row">
+          <div class="form-group" style="flex:1">
+            <label><span data-i18n="label_days">Días de la semana</span> <span class="form-hint" data-i18n="label_days_hint">sin marcar = todos los días</span></label>
+            <div class="day-btns-row" id="dayBtnsRow">
+              <button type="button" class="day-btn" data-day="1" data-i18n-day="1">Lun</button>
+              <button type="button" class="day-btn" data-day="2" data-i18n-day="2">Mar</button>
+              <button type="button" class="day-btn" data-day="3" data-i18n-day="3">Mié</button>
+              <button type="button" class="day-btn" data-day="4" data-i18n-day="4">Jue</button>
+              <button type="button" class="day-btn" data-day="5" data-i18n-day="5">Vie</button>
+              <button type="button" class="day-btn" data-day="6" data-i18n-day="6">Sáb</button>
+              <button type="button" class="day-btn" data-day="0" data-i18n-day="0">Dom</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Origin airports -->
+        <div class="form-row">
+          <div class="form-group">
+            <label data-i18n="label_origin">Origen</label>
+            <div class="airport-selector" id="selectorFrom">
+              <button type="button" class="airport-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="airport-trigger-text" data-i18n="airport_placeholder">Seleccionar…</span>
+                <span class="airport-trigger-arrow">&#x25BE;</span>
+              </button>
+              <div class="airport-dropdown" role="listbox">
+                <div class="dropdown-search-wrap">
+                  <input type="text" class="dropdown-search-input" placeholder="Filtrar aeropuerto…" data-i18n-placeholder="airport_filter_ph" autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="dropdown-list"></div>
+              </div>
+              <div class="tags" id="tagsFrom"></div>
+            </div>
+          </div>
+
+          <!-- Destination airports -->
+          <div class="form-group">
+            <label data-i18n="label_dest">Destino</label>
+            <div class="airport-selector" id="selectorTo">
+              <button type="button" class="airport-trigger" aria-haspopup="listbox" aria-expanded="false">
+                <span class="airport-trigger-text" data-i18n="airport_placeholder">Seleccionar…</span>
+                <span class="airport-trigger-arrow">&#x25BE;</span>
+              </button>
+              <div class="airport-dropdown" role="listbox">
+                <div class="dropdown-search-wrap">
+                  <input type="text" class="dropdown-search-input" placeholder="Filtrar aeropuerto…" data-i18n-placeholder="airport_filter_ph" autocomplete="off" spellcheck="false" />
+                </div>
+                <div class="dropdown-list"></div>
+              </div>
+              <div class="tags" id="tagsTo"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Max stops -->
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label data-i18n="label_max_stops">Máximo de escalas</label>
+          <div class="stops-row" id="stopsRow">
+            <button type="button" class="stop-btn active" data-value="0" data-i18n="stops_0">Sin escalas</button>
+            <button type="button" class="stop-btn" data-value="1" data-i18n="stops_1">1 escala</button>
+            <button type="button" class="stop-btn" data-value="2" data-i18n="stops_2">2 escalas</button>
+            <button type="button" class="stop-btn" data-value="3" data-i18n="stops_3">3 escalas</button>
+          </div>
+          <input type="hidden" id="maxStops" value="0" />
+        </div>
+
+        <button type="submit" class="btn-search" data-i18n="btn_search">🔍 Buscar vuelos</button>
+        <div class="import-row">
+          <input type="file" id="importFileInput" accept=".json" hidden />
+          <button type="button" class="btn-import" id="btnImportJSON" data-i18n="btn_import">📂 Importar resultados</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+      <div class="results-placeholder">
+        <span class="placeholder-icon">&#x1F6EB;</span>
+        <span data-i18n="results_placeholder">Los resultados aparecerán aquí</span>
+      </div>
+    </div>
+    </div><!-- /tab-search -->
+
+    <!-- Saved tab -->
+    <div class="tab-panel hidden" id="tab-saved">
+      <div id="savedSearches"></div>
+      <div id="savedFlights"></div>
+    </div><!-- /tab-saved -->
+
+    <!-- Logs tab -->
+    <div class="tab-panel hidden" id="tab-logs">
+      <div class="log-panel">
+        <div class="log-toolbar">
+          <span class="log-dot" id="logDot"></span>
+          <span class="log-title">Python backend logs</span>
+          <div class="log-level-wrap">
+            <label class="log-level-label" for="logLevelSelect" data-i18n="log_level_label">Nivel</label>
+            <select class="log-level-select" id="logLevelSelect">
+              <option value="0" data-i18n="log_opt_0">0 — Silencio</option>
+              <option value="1" data-i18n="log_opt_1">1 — Error</option>
+              <option value="2" selected data-i18n="log_opt_2">2 — Info</option>
+              <option value="3" data-i18n="log_opt_3">3 — Verbose</option>
+              <option value="4" data-i18n="log_opt_4">4 — Debug</option>
+            </select>
+          </div>
+          <div class="log-actions">
+            <button class="log-btn" id="logPauseBtn">⏸ Pausar</button>
+            <button class="log-btn" id="logClearBtn" data-i18n="log_clear">🗑 Limpiar</button>
+            <button class="log-btn" id="logCopyBtn" data-i18n="log_copy">📋 Copiar</button>
+          </div>
+        </div>
+        <div class="log-output" id="logOutput">
+          <span class="log-placeholder" data-i18n="log_placeholder">Abre esta pestaña con el servidor corriendo para ver los logs en tiempo real.</span>
+        </div>
+      </div>
+    </div><!-- /tab-logs -->
+
+  </main>
+
+  <script src="i18n.js"></script>
+  <script src="iata_routes.js"></script>
+  <script src="airports.js"></script>
+  <script src="render.js"></script>
+  <script src="saved.js"></script>
+  <script src="filters.js"></script>
+  <script src="return.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
