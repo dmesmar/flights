@@ -153,6 +153,12 @@ const I18N = {
     saved_express_title:        '⚡ Rutas Exprés Guardadas',
     btn_import_express:         '📂 Importar exprés',
     ex_ss_trips_count:          (n, date) => `${n} viaje${n !== 1 ? 's' : ''} · ${date}`,
+    ex_combine_btn:             '⊕ Elegir',
+    ex_combine_btn_selected:    '✓ Elegido',
+    ex_combine_hint:            '¡Ahora selecciona el otro vuelo para combinarlos!',
+    ex_combine_cancel:          '✕ Cancelar',
+    ex_combine_wrong_dir:       'Selecciona un vuelo de ida (mañana) y uno de vuelta (tarde/noche).',
+    ex_combine_title:           '⚡ Viaje Exprés Combinado',
 
     /* ── Logs ── */
     log_level_label:  'Nivel',
@@ -378,6 +384,12 @@ const I18N = {
     saved_express_title:        '⚡ Saved Express Routes',
     btn_import_express:         '📂 Import express',
     ex_ss_trips_count:          (n, date) => `${n} trip${n !== 1 ? 's' : ''} · ${date}`,
+    ex_combine_btn:             '⊕ Choose',
+    ex_combine_btn_selected:    '✓ Selected',
+    ex_combine_hint:            'Now select the other flight to combine them!',
+    ex_combine_cancel:          '✕ Cancel',
+    ex_combine_wrong_dir:       'Select one outbound (morning) and one return (afternoon/evening) flight.',
+    ex_combine_title:           '⚡ Combined Express Trip',
 
     /* ── Logs ── */
     log_level_label:  'Level',

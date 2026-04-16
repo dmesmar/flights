@@ -155,6 +155,13 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
   };
 
   const resultsEl = document.getElementById('results');
+
+  // If we're not on the search tab, switch to it before showing return results
+  const searchTabBtn = document.querySelector('.tab-btn[data-tab="search"]');
+  if (searchTabBtn && !searchTabBtn.classList.contains('active')) {
+    searchTabBtn.click();
+  }
+
   let returnSection = document.getElementById('returnSection');
   if (returnSection) returnSection.remove();
   returnSection = document.createElement('div');
@@ -174,7 +181,7 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
       <button type="button" class="return-section-close" id="returnSectionClose">${t('rs_close')}</button>
     </div>
     ${renderSpinner([`${flight.destino} \u2192 ${flight.origen}`])}`;
-  returnSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  requestAnimationFrame(() => returnSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   document.getElementById('returnSectionClose')?.addEventListener('click', () => returnSection.remove());
 
   // Poll /api/progress while return search runs

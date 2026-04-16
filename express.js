@@ -19,6 +19,7 @@ let exDestEntries = null; // last search results for filter re-renders
 let exElapsedS    = '0.0';
 let exRawOut      = null;
 let exRawRet      = null;
+let exSelectedFlight = null; // flight pending combination
 
 /* ── Airport selectors ── */
 const exSelectorFrom = createAirportSelector(
@@ -259,8 +260,9 @@ function expressCard(v) {
   const arrival  = v.adelanto_llegada ? `<sup class="next-day">${v.adelanto_llegada}</sup>` : '';
   const id       = flightId(v);
   const savedNow = isSaved(v);
+  const isSelected = exSelectedFlight && flightId(exSelectedFlight) === id;
   return `
-    <div class="flight-card">
+    <div class="flight-card${isSelected ? ' express-card-selected' : ''}" data-flight-id="${id}">
       <div class="card-top">
         <span class="card-date-label">${flightDateLabel(v.fecha)}</span>
         <span class="card-airline-name">${v.aerolinea}</span>
@@ -287,6 +289,10 @@ function expressCard(v) {
       <div class="card-footer">
         <span class="card-price">${v.precio}</span>
         <div class="card-footer-right">
+          <button class="ex-combine-btn${isSelected ? ' ex-combine-selected' : ''}" data-id="${id}"
+            title="${isSelected ? t('ex_combine_cancel') : t('ex_combine_hint')}">
+            ${isSelected ? t('ex_combine_btn_selected') : t('ex_combine_btn')}
+          </button>
           <button class="save-btn ${savedNow ? 'save-btn-active' : ''}" data-id="${id}"
             title="${t(savedNow ? 'save_title_saved' : 'save_title_save')}">
             ${savedNow ? '♥' : '♡'}
@@ -436,18 +442,79 @@ function renderExpressGrid(filters) {
       btn.addEventListener('click', () => toggleSave(v));
     }
   });
+
+  // ── Combine button logic ──
+  let hintBar = document.getElementById('exCombineHint');
+  if (!hintBar) {
+    hintBar = document.createElement('div');
+    hintBar.id = 'exCombineHint';
+    hintBar.className = 'ex-combine-hint hidden';
+    hintBar.innerHTML = `<span class="ex-combine-hint-text"></span>
+      <button type="button" class="ex-combine-cancel-btn">${t('ex_combine_cancel')}</button>`;
+    document.getElementById('expressResults')?.prepend(hintBar);
+    hintBar.querySelector('.ex-combine-cancel-btn').addEventListener('click', () => {
+      exSelectedFlight = null;
+      renderExpressGrid(readExpressFilters());
+    });
+  }
+
+  function updateHintBar() {
+    if (exSelectedFlight) {
+      hintBar.classList.remove('hidden');
+      hintBar.querySelector('.ex-combine-hint-text').textContent = t('ex_combine_hint');
+    } else {
+      hintBar.classList.add('hidden');
+    }
+  }
+  updateHintBar();
+
+  grid.querySelectorAll('.ex-combine-btn').forEach(btn => {
+    const id = btn.dataset.id;
+    const v  = allFlights.find(f => flightId(f) === id);
+    if (!v) return;
+    btn.addEventListener('click', () => {
+      if (exSelectedFlight && flightId(exSelectedFlight) === id) {
+        // Deselect
+        exSelectedFlight = null;
+        renderExpressGrid(readExpressFilters());
+        return;
+      }
+      if (!exSelectedFlight) {
+        // First selection
+        exSelectedFlight = v;
+        renderExpressGrid(readExpressFilters());
+        return;
+      }
+      // Second selection — try to combine
+      const first  = exSelectedFlight;
+      const second = v;
+      const firstMorning  = isMorning(first);
+      const secondMorning = isMorning(second);
+      if (firstMorning === secondMorning) {
+        alert(t('ex_combine_wrong_dir'));
+        return;
+      }
+      const outbound = firstMorning ? first : second;
+      const ret      = firstMorning ? second : first;
+      exSelectedFlight = null;
+      showTripSummary(outbound, ret);
+      renderExpressGrid(readExpressFilters());
+    });
+  });
 }
 
 /* ── Bind filter events ── */
+function readExpressFilters() {
+  return {
+    maxTotal: parseFloat(document.getElementById('exFPrice')?.value ?? 9999),
+    destOut:  document.getElementById('exFDestOut')?.value ?? '',
+    destRet:  document.getElementById('exFDestRet')?.value ?? '',
+    sort:     document.getElementById('exFSort')?.value ?? 'total-asc',
+  };
+}
+
 function bindExpressFilterEvents(maxSlider) {
-  function readFilters() {
-    return {
-      maxTotal: parseFloat(document.getElementById('exFPrice')?.value ?? maxSlider),
-      destOut:  document.getElementById('exFDestOut')?.value ?? '',
-      destRet:  document.getElementById('exFDestRet')?.value ?? '',
-      sort:     document.getElementById('exFSort')?.value ?? 'total-asc',
-    };
-  }
+  function readFilters() { return readExpressFilters(); }
   function refresh() { renderExpressGrid(readFilters()); }
 
   document.getElementById('exFPrice')?.addEventListener('input', (e) => {

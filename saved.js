@@ -123,6 +123,7 @@ function renderSavedTab() {
               <span class="card-price">${v.precio}</span>
             </div>
             <div class="card-footer-right">
+              <button class="return-btn" data-id="${id}" title="${t('btn_return_title')}">${t('btn_return_short')}</button>
               <button class="refresh-btn" data-id="${id}" title="${t('refresh_btn_title')}">↻</button>
               <button class="save-btn save-btn-active" data-id="${id}" title="${t('save_title_saved')}">♥</button>
             </div>
@@ -138,6 +139,12 @@ function renderSavedTab() {
     const id = btn.dataset.id;
     const v  = list.find(s => flightId(s) === id);
     if (v) btn.addEventListener('click', () => toggleSave(v));
+  });
+
+  container.querySelectorAll('.return-btn').forEach(btn => {
+    const id = btn.dataset.id;
+    const v  = list.find(s => flightId(s) === id);
+    if (v) btn.addEventListener('click', () => openReturnModal(v));
   });
 
   container.querySelectorAll('.refresh-btn').forEach(btn => {
