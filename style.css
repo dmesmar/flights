@@ -582,6 +582,9 @@ select:focus {
   flex-direction: column;
   gap: 0.35rem;
 }
+.advanced-field-full {
+  flex: 0 0 100%;
+}
 .advanced-field label {
   font-size: 0.78rem;
   font-weight: 600;

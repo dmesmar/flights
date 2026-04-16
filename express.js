@@ -81,12 +81,15 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
 
   const searchStart = Date.now();
 
+  const maxResultsEx = parseInt(document.getElementById('exMaxResults')?.value || '3') || 3;
+
   const payloadOut = {
     fecha_ini:    fechaIniBack,
     fecha_fin:    fechaFinBack,
     airport_from: from,
     airport_to:   to,
     max_stops:    stops,
+    max_results:  maxResultsEx,
   };
   const payloadRet = {
     fecha_ini:    fechaIniBack,
@@ -94,6 +97,7 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     airport_from: to,
     airport_to:   from,
     max_stops:    stops,
+    max_results:  maxResultsEx,
   };
 
   resultsEl.innerHTML = renderSpinner([...from.flatMap(f => to.map(t2 => `${f} → ${t2}`))]);
