@@ -273,6 +273,11 @@ const AIRPORTS = [
   { iata: "PHL", name: "Filadelfia", city: "Filadelfia", country: "US" },
   { iata: "SEA", name: "Seattle-Tacoma", city: "Seattle", country: "US" },
   { iata: "SFO", name: "San Francisco", city: "San Francisco", country: "US" },
+  // ── Alaska ──
+  { iata: "ANC", name: "Ted Stevens Anchorage", city: "Anchorage", country: "AK" },
+  { iata: "FAI", name: "Fairbanks", city: "Fairbanks", country: "AK" },
+  { iata: "JNU", name: "Juneau", city: "Juneau", country: "AK" },
+  { iata: "KTN", name: "Ketchikan", city: "Ketchikan", country: "AK" },
   // ── Etiopía ──
   { iata: "ADD", name: "Bole", city: "Addis Abeba", country: "ET" },
   // ── Francia (adicional) ──
@@ -425,7 +430,7 @@ const AIRPORTS = [
    COUNTRY FLAGS  (ISO 3166-1 alpha-2 → emoji)
 ═══════════════════════════════════════════ */
 const COUNTRY_FLAGS = {
-  AE: "🇦🇪", AL: "🇦🇱", AM: "🇦🇲", AR: "🇦🇷", AT: "🇦🇹",
+  AE: "🇦🇪", AK: "🇺🇸", AL: "🇦🇱", AM: "🇦🇲", AR: "🇦🇷", AT: "🇦🇹",
   AZ: "🇦🇿", BE: "🇧🇪", BG: "🇧🇬", BO: "🇧🇴", BR: "🇧🇷",
   CA: "🇨🇦", CH: "🇨🇭", CL: "🇨🇱", CN: "🇨🇳", CO: "🇨🇴",
   CR: "🇨🇷", CU: "🇨🇺", CV: "🇨🇻", CY: "🇨🇾", CZ: "🇨🇿",

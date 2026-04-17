@@ -135,8 +135,7 @@ header {
 
 /* ── Main layout ── */
 main {
-  max-width: 1400px;
-  margin: 2rem auto;
+  margin: 2rem 0;
   padding: 0 1.5rem 3rem;
 }
 
@@ -179,6 +178,44 @@ main {
 
 @media (max-width: 600px) {
   .form-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  /* Dropdown fills 95% of viewport width (centered) — positioning handled by JS */
+  .airport-dropdown {
+    border-radius: 0.5rem;
+    max-height: 76vh; /* 80vh × 0.95 */
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+  }
+  .airport-dropdown.open {
+    display: flex;
+  }
+
+  /* Stack map on top, airport list below */
+  .map-dropdown-body {
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    max-height: unset;
+    overflow: hidden;
+  }
+
+  /* Map gets a fixed height, not 3/4 of width */
+  .map-panel {
+    flex: none;
+    height: 190px; /* 200px × 0.95 */
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Airport list takes remaining space and scrolls */
+  .map-airports-panel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
 }
 
 .form-group {
@@ -284,7 +321,9 @@ select:focus {
   position: absolute;
   top: calc(100% + 0px);
   left: 0;
-  right: 0;
+  min-width: 100%;
+  width: 45vw;
+  max-width: 45vw;
   background: var(--dropdown-bg);
   border: 1.5px solid var(--accent);
   border-top: none;
@@ -443,6 +482,209 @@ select:focus {
   font-size: 0.88rem;
   font-style: italic;
 }
+
+/* ═══════════════════════════════════════════
+   MAP SELECTOR
+═══════════════════════════════════════════ */
+.map-dropdown-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.map-continent-bar {
+  display: flex;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.map-continent-btn {
+  flex: 1;
+  padding: 0.3rem 0.4rem;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+.map-continent-btn:last-child { border-right: none; }
+.map-continent-btn:hover { background: var(--dropdown-hover); color: var(--text); }
+.map-continent-btn.active { color: var(--accent); background: var(--tag-bg); }
+
+.map-dropdown-body {
+  display: flex;
+  min-height: 400px;
+  max-height: 450px;
+  overflow: hidden;
+}
+
+/* Left panel: SVG map */
+.map-panel {
+  flex: 3;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--map-sea, #1a2035);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+[data-theme="light"] .map-panel {
+  background: var(--map-sea, #a8c8e0);
+}
+
+.map-loading {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.map-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  cursor: grab;
+  touch-action: none; /* allow pointer capture for pan on touch */
+  user-select: none;
+}
+
+/* Non-classified SVG paths (ocean borders, Antarctica etc.) */
+.map-bg-path {
+  fill: var(--map-land-other, #2a3050);
+  stroke: var(--map-border, #1a2035);
+  stroke-width: 0.4;
+  pointer-events: none;
+}
+[data-theme="light"] .map-bg-path {
+  fill: var(--map-land-other, #c5d8e8);
+  stroke: var(--map-border, #a8c8e0);
+}
+
+.map-country {
+  fill: var(--map-country-fill, #3a3f5c);
+  stroke: var(--map-border, #1a2035);
+  stroke-width: 0.5;
+  cursor: pointer;
+  transition: fill 0.15s;
+}
+[data-theme="light"] .map-country {
+  --map-country-fill: #b8cfe0;
+  --map-border: #8fb8d0;
+}
+.map-country.has-airports {
+  fill: var(--map-has-airports, #4a537a);
+}
+[data-theme="light"] .map-country.has-airports {
+  --map-has-airports: #6a9fc0;
+}
+.map-country.has-airports:hover,
+.map-country.has-airports:focus {
+  fill: var(--accent);
+  outline: none;
+}
+.map-country.active-country {
+  fill: var(--accent) !important;
+  filter: drop-shadow(0 0 3px var(--accent));
+}
+.map-country.no-airports {
+  cursor: default;
+}
+
+/* Right panel: airport list */
+.map-airports-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-airports-header {
+  padding: 0.5rem 0.75rem 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.map-airports-header-btns {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.map-airports-header-btns button {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.map-airports-header-btns button:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.map-airports-list {
+  overflow-y: auto;
+  flex: 1;
+  overscroll-behavior: contain;
+}
+
+.map-airport-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+/* Search input inside map panel right */
+.map-search-wrap {
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.map-search-input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+.map-search-input::placeholder { color: var(--text-muted); }
+.map-search-input:focus { border-color: var(--accent); }
 
 /* ── Tags ── */
 .tags {

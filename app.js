@@ -86,6 +86,19 @@ function countryLabel(code) {
 }
 
 /* ═══════════════════════════════════════════
+   CONTINENT MAPS — pre-processed SVG paths from files/continents-map.js
+   Each path has data-country="XX" (ISO 3166-1 alpha-2).
+═══════════════════════════════════════════ */
+const _continentDocs = {};
+if (typeof CONTINENT_MAPS !== 'undefined') {
+  for (const def of CONTINENT_MAPS) {
+    try {
+      _continentDocs[def.id] = new DOMParser().parseFromString(def.svgStr, 'image/svg+xml');
+    } catch (_) {}
+  }
+}
+
+/* ═══════════════════════════════════════════
    AIRPORT SELECTOR FACTORY
 ═══════════════════════════════════════════ */
 function createAirportSelector(selectorEl, tagsEl) {
@@ -97,12 +110,459 @@ function createAirportSelector(selectorEl, tagsEl) {
   const selected       = new Set();
   let getAllowedFn  = null;
   let onChangeCb   = null;
+  let activeContinent = (typeof CONTINENT_MAPS !== 'undefined' && CONTINENT_MAPS[0]?.id) || 'EU';
+  let activeCountry = null; // currently highlighted country on map
+
+  // Build the two-panel map UI inside dropdown
+  const mapBody = document.createElement('div');
+  mapBody.className = 'map-dropdown-body';
+
+  // Left: SVG map
+  const mapPanel = document.createElement('div');
+  mapPanel.className = 'map-panel';
+
+  const countriesWithAirports = new Set(AIRPORTS.map(a => a.country));
+
+  // Map panels — rendered from CONTINENT_MAPS constant
+  let injectedSvgEl = null;
+  let mapInjected = null; // continent id currently rendered, or null
+
+  function renderContinent(id) {
+    if (mapInjected === id) return;
+    mapInjected = id;
+    activeContinent = id;
+    activeCountry = null;
+
+    // Update continent bar active state
+    continentBar.querySelectorAll('.map-continent-btn')
+      .forEach(b => b.classList.toggle('active', b.dataset.continent === id));
+
+    // Swap SVG
+    if (injectedSvgEl) injectedSvgEl.remove();
+    injectedSvgEl = null;
+    mapPanel.innerHTML = '';
+
+    const doc = _continentDocs[id];
+    if (!doc) {
+      mapPanel.innerHTML = '<div class="map-airport-placeholder">Map unavailable</div>';
+      return;
+    }
+
+    const svgEl = document.importNode(doc.documentElement, true);
+    svgEl.setAttribute('class', 'map-svg');
+    svgEl.setAttribute('aria-hidden', 'true');
+    svgEl.removeAttribute('width');
+    svgEl.removeAttribute('height');
+
+    for (const path of svgEl.querySelectorAll('path')) {
+      const cc = path.getAttribute('data-country');
+      if (cc) {
+        path.setAttribute('class', 'map-country');
+        if (countriesWithAirports.has(cc)) {
+          path.classList.add('has-airports');
+          path.setAttribute('tabindex', '0');
+          path.setAttribute('role', 'button');
+          path.setAttribute('aria-label', countryLabel(cc));
+          path.addEventListener('click', () => selectMapCountry(cc));
+          path.addEventListener('keydown', ev => {
+            if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectMapCountry(cc); }
+          });
+        } else {
+          path.classList.add('no-airports');
+        }
+      } else {
+        path.setAttribute('class', 'map-bg-path');
+      }
+    }
+
+    injectedSvgEl = svgEl;
+    mapPanel.appendChild(svgEl);
+
+    // ── Zoom / pan ──────────────────────────────────────────
+    const vbArr = svgEl.getAttribute('viewBox').trim().split(/[\s,]+/).map(Number);
+    let vpX = vbArr[0], vpY = vbArr[1], vpW = vbArr[2], vpH = vbArr[3];
+    const vpBaseW = vpW, vpBaseH = vpH;
+    let panStart = null; // {x, y, vx, vy, id}
+    let didPan = false;
+    const PAN_THRESHOLD = 4; // px before committing to a drag
+
+    function applyVB() {
+      svgEl.setAttribute('viewBox', `${vpX} ${vpY} ${vpW} ${vpH}`);
+    }
+
+    // Scroll-wheel zoom (zoom toward cursor)
+    svgEl.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
+      const rect = svgEl.getBoundingClientRect();
+      const mx = vpX + (e.clientX - rect.left) / rect.width  * vpW;
+      const my = vpY + (e.clientY - rect.top)  / rect.height * vpH;
+      const newW = Math.max(vpBaseW * 0.08, Math.min(vpBaseW * 3, vpW * factor));
+      const newH = Math.max(vpBaseH * 0.08, Math.min(vpBaseH * 3, vpH * factor));
+      vpX = mx - (e.clientX - rect.left) / rect.width  * newW;
+      vpY = my - (e.clientY - rect.top)  / rect.height * newH;
+      vpW = newW; vpH = newH;
+      applyVB();
+    }, { passive: false });
+
+    // Drag-to-pan: works from any part of the map.
+    // Pointer capture is deferred until the threshold is exceeded so that
+    // a simple click still fires the country's click handler normally.
+    svgEl.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return; // only primary button / touch
+      panStart = { x: e.clientX, y: e.clientY, vx: vpX, vy: vpY, id: e.pointerId };
+      didPan = false;
+    });
+
+    svgEl.addEventListener('pointermove', (e) => {
+      if (!panStart || e.pointerId !== panStart.id) return;
+      const dx = e.clientX - panStart.x;
+      const dy = e.clientY - panStart.y;
+      if (!didPan) {
+        if (Math.hypot(dx, dy) < PAN_THRESHOLD) return;
+        didPan = true;
+        // Capture only after threshold — pure clicks propagate normally
+        svgEl.setPointerCapture(e.pointerId);
+        svgEl.style.cursor = 'grabbing';
+      }
+      const rect = svgEl.getBoundingClientRect();
+      vpX = panStart.vx - dx / rect.width  * vpW;
+      vpY = panStart.vy - dy / rect.height * vpH;
+      applyVB();
+    });
+
+    const endPan = (e) => {
+      if (!panStart || e.pointerId !== panStart.id) return;
+      panStart = null;
+      svgEl.style.cursor = '';
+    };
+    svgEl.addEventListener('pointerup',     endPan);
+    svgEl.addEventListener('pointercancel', (e) => { endPan(e); didPan = false; });
+
+    // Suppress the click event that fires right after a pan drag so that
+    // releasing the mouse over a country doesn't select it unintentionally.
+    svgEl.addEventListener('click', (e) => {
+      if (didPan) { didPan = false; e.stopImmediatePropagation(); }
+    }, true /* capture phase, before path listeners */);
+
+    // Double-click ocean / no-airports → reset zoom
+    svgEl.addEventListener('dblclick', (e) => {
+      if (!e.target.classList.contains('has-airports')) {
+        vpX = vbArr[0]; vpY = vbArr[1]; vpW = vpBaseW; vpH = vpBaseH;
+        applyVB();
+      }
+    });
+    // ────────────────────────────────────────────────────────
+
+    // Show all airports in this continent
+    const def = typeof CONTINENT_MAPS !== 'undefined' ? CONTINENT_MAPS.find(c => c.id === id) : null;
+    const title = apHeader.querySelector('.map-airports-title');
+    if (title) title.textContent = t('continent_' + id) || def?.label_es || id;
+    apHeader.querySelector('.map-airports-header-btns').innerHTML = '';
+    apSearchWrap.style.display = '';
+    apSearchInput.value = '';
+    apSearchInput.oninput = () => renderContinentAirports(activeContinent, apSearchInput.value);
+    renderContinentAirports(id, '');
+  }
+
+  function switchContinent(id) {
+    mapInjected = null; // force re-render
+    renderContinent(id);
+  }
+
+  // Right: airports panel
+  const airportsPanel = document.createElement('div');
+  airportsPanel.className = 'map-airports-panel';
+
+  const apHeader = document.createElement('div');
+  apHeader.className = 'map-airports-header';
+  apHeader.innerHTML = `<span class="map-airports-title" data-i18n="map_pick_country">${t('map_pick_country') || 'Elige un país'}</span>
+    <div class="map-airports-header-btns"></div>`;
+  airportsPanel.appendChild(apHeader);
+
+  const apSearchWrap = document.createElement('div');
+  apSearchWrap.className = 'map-search-wrap';
+  const apSearchInput = document.createElement('input');
+  apSearchInput.type = 'text';
+  apSearchInput.className = 'map-search-input';
+  apSearchInput.placeholder = t('map_search_placeholder') || 'Buscar aeropuerto…';
+  apSearchInput.autocomplete = 'off';
+  apSearchInput.spellcheck = false;
+  apSearchWrap.appendChild(apSearchInput);
+  apSearchWrap.style.display = 'none';
+  airportsPanel.appendChild(apSearchWrap);
+
+  const apList = document.createElement('div');
+  apList.className = 'map-airports-list dropdown-list';
+  apList.innerHTML = `<div class="map-airport-placeholder">${t('map_pick_country') || 'Elige un país en el mapa'}</div>`;
+  airportsPanel.appendChild(apList);
+
+  // Continent selector bar
+  const continentBar = document.createElement('div');
+  continentBar.className = 'map-continent-bar';
+  if (typeof CONTINENT_MAPS !== 'undefined') {
+    for (const def of CONTINENT_MAPS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'map-continent-btn' + (def.id === activeContinent ? ' active' : '');
+      btn.dataset.continent = def.id;
+      btn.textContent = t('continent_' + def.id) || def.label_es;
+      btn.addEventListener('click', () => switchContinent(def.id));
+      continentBar.appendChild(btn);
+    }
+  }
+
+  mapBody.appendChild(mapPanel);
+  mapBody.appendChild(airportsPanel);
+
+  // Wrapper: continent bar on top, two-panel map body below
+  const mapWrapper = document.createElement('div');
+  mapWrapper.className = 'map-dropdown-wrapper';
+  mapWrapper.appendChild(continentBar);
+  mapWrapper.appendChild(mapBody);
+  dropdown.appendChild(mapWrapper);
+
+  // Text search fallback (replaces map when typing in trigger input)
+  // The trigger input remains in .airport-trigger but controls map vs list mode
+  function isSearchMode() {
+    return searchInput.value.trim().length > 0;
+  }
+
+  function selectMapCountry(code) {
+    activeCountry = code;
+    // Update SVG active state
+    if (injectedSvgEl) {
+      injectedSvgEl.querySelectorAll('[data-country]').forEach(p => p.classList.remove('active-country'));
+      injectedSvgEl.querySelectorAll(`[data-country="${code}"]`).forEach(p => p.classList.add('active-country'));
+    }
+
+    // Update header
+    const title = apHeader.querySelector('.map-airports-title');
+    title.textContent = countryLabel(code);
+    apSearchWrap.style.display = '';
+    apSearchInput.value = '';
+
+    // Show select-all / deselect-all buttons
+    const btnsEl = apHeader.querySelector('.map-airports-header-btns');
+    const countryAirports = AIRPORTS.filter(a => a.country === code);
+    btnsEl.innerHTML = `<button type="button" class="map-sel-all">${t('select_all') || 'Todos'}</button>
+      <button type="button" class="map-desel-all">${t('deselect_all') || 'Ninguno'}</button>`;
+    btnsEl.querySelector('.map-sel-all').addEventListener('click', () => {
+      countryAirports.forEach(a => {
+        const allowed = getAllowedFn ? getAllowedFn(a) : true;
+        if (allowed) selected.add(a.iata);
+      });
+      if (code === 'AK' || code === 'US') syncAlaskaUS(true, false);
+      renderTags(); updateTriggerText(); renderCountryAirports(code, ''); onChangeCb?.();
+    });
+    btnsEl.querySelector('.map-desel-all').addEventListener('click', () => {
+      countryAirports.forEach(a => selected.delete(a.iata));
+      if (code === 'AK' || code === 'US') syncAlaskaUS(false, true);
+      renderTags(); updateTriggerText(); renderCountryAirports(code, ''); onChangeCb?.();
+    });
+
+    apSearchInput.oninput = () => renderCountryAirports(code, apSearchInput.value);
+    renderCountryAirports(code, '');
+  }
+
+  function renderCountryAirports(code, query) {
+    const q = query.trim().toLowerCase();
+    let airports = AIRPORTS.filter(a => a.country === code);
+    if (q) airports = airports.filter(a =>
+      a.iata.toLowerCase().includes(q) ||
+      a.city.toLowerCase().includes(q) ||
+      a.name.toLowerCase().includes(q)
+    );
+    apList.innerHTML = '';
+    if (airports.length === 0) {
+      apList.innerHTML = `<div class="map-airport-placeholder">${t('no_results') || 'Sin resultados'}</div>`;
+      return;
+    }
+    airports.forEach(a => renderAirportOption(a, apList));
+  }
+
+  function renderContinentAirports(id, query) {
+    const doc = _continentDocs[id];
+    if (!doc) return;
+    const continentCountries = new Set(
+      [...doc.querySelectorAll('[data-country]')].map(p => p.getAttribute('data-country'))
+    );
+    const q = query.trim().toLowerCase();
+    let airports = AIRPORTS.filter(a => continentCountries.has(a.country));
+    if (q) airports = airports.filter(a =>
+      a.iata.toLowerCase().includes(q) ||
+      a.city.toLowerCase().includes(q) ||
+      a.name.toLowerCase().includes(q) ||
+      countryLabel(a.country).toLowerCase().includes(q)
+    );
+    apList.innerHTML = '';
+    if (airports.length === 0) {
+      apList.innerHTML = `<div class="map-airport-placeholder">${t('no_results') || 'Sin resultados'}</div>`;
+      return;
+    }
+    const byCountry = {};
+    airports.forEach(a => {
+      if (!byCountry[a.country]) byCountry[a.country] = { name: countryLabel(a.country), airports: [] };
+      byCountry[a.country].airports.push(a);
+    });
+    for (const group of Object.values(byCountry)) {
+      const header = document.createElement('div');
+      header.className = 'dropdown-country-header';
+      header.innerHTML = `<span class="country-header-name">${group.name}</span>
+        <div class="country-header-btns">
+          <button type="button" class="country-select-all">${t('select_all')}</button>
+          <button type="button" class="country-deselect-all">${t('deselect_all')}</button>
+        </div>`;
+      header.querySelector('.country-select-all').addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        group.airports.forEach(a => { const ok = getAllowedFn ? getAllowedFn(a) : true; if (ok) selected.add(a.iata); });
+        const groupCountry = group.airports[0]?.country;
+        if (groupCountry === 'AK' || groupCountry === 'US') syncAlaskaUS(true, false);
+        renderTags(); updateTriggerText(); renderContinentAirports(id, apSearchInput.value); onChangeCb?.();
+      });
+      header.querySelector('.country-deselect-all').addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        group.airports.forEach(a => selected.delete(a.iata));
+        const groupCountry = group.airports[0]?.country;
+        if (groupCountry === 'AK' || groupCountry === 'US') syncAlaskaUS(false, true);
+        renderTags(); updateTriggerText(); renderContinentAirports(id, apSearchInput.value); onChangeCb?.();
+      });
+      apList.appendChild(header);
+      group.airports.forEach(a => renderAirportOption(a, apList));
+    }
+  }
+
+  // Helper: sync AK ↔ US when one is selected/deselected
+  function syncAlaskaUS(justAdded, justRemoved) {
+    // Link between Alaska (AK) and continental US (US)
+    const akAirports = AIRPORTS.filter(a => a.country === 'AK');
+    const usAirports = AIRPORTS.filter(a => a.country === 'US');
+    const allUS = [...akAirports, ...usAirports];
+    
+    // If anything from AK/US was added, add all of the linked group
+    if (justAdded) {
+      allUS.forEach(a => {
+        const allowed = getAllowedFn ? getAllowedFn(a) : true;
+        if (allowed) selected.add(a.iata);
+      });
+    }
+    // If anything from AK/US was removed, remove all of the linked group
+    if (justRemoved) {
+      allUS.forEach(a => selected.delete(a.iata));
+    }
+  }
+
+  function renderAirportOption(a, container) {
+    const allowed = getAllowedFn ? getAllowedFn(a) : true;
+    const el = document.createElement('div');
+    el.className = 'airport-option' + (selected.has(a.iata) ? ' selected' : '') + (allowed ? '' : ' no-route');
+    el.setAttribute('role', 'option');
+    el.setAttribute('tabindex', allowed ? '0' : '-1');
+    el.innerHTML = `<span class="iata">${a.iata}</span><span class="airport-city">${a.city}</span><span class="airport-name">${a.name}</span>${selected.has(a.iata) ? '<span class="option-check">\u2713</span>' : ''}`;
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      if (!allowed) return;
+      const wasSelected = selected.has(a.iata);
+      if (wasSelected) {
+        selected.delete(a.iata);
+        // Check if this is an AK/US airport and sync
+        if (a.country === 'AK' || a.country === 'US') syncAlaskaUS(false, true);
+      } else {
+        selected.add(a.iata);
+        // Check if this is an AK/US airport and sync
+        if (a.country === 'AK' || a.country === 'US') syncAlaskaUS(true, false);
+      }
+      renderTags(); updateTriggerText(); onChangeCb?.();
+      // Re-render in place
+      if (activeCountry) renderCountryAirports(activeCountry, apSearchInput.value);
+      else if (isSearchMode()) renderSearchList(searchInput.value);
+      else renderContinentAirports(activeContinent, apSearchInput.value);
+    });
+    container.appendChild(el);
+  }
+
+  // Search list mode (text query)
+  function renderSearchList(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      list.innerHTML = '';
+      list.style.display = 'none';
+      mapWrapper.style.display = '';
+      return;
+    }
+    list.style.display = '';
+    mapWrapper.style.display = 'none';
+
+    const filtered = AIRPORTS.filter(a =>
+      a.iata.toLowerCase().includes(q) ||
+      a.name.toLowerCase().includes(q) ||
+      a.city.toLowerCase().includes(q) ||
+      countryLabel(a.country).toLowerCase().includes(q)
+    );
+    list.innerHTML = '';
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="no-results">${t('no_results')}</div>`;
+      return;
+    }
+    const byCountry = {};
+    filtered.forEach(a => {
+      if (!byCountry[a.country]) byCountry[a.country] = { name: countryLabel(a.country), airports: [] };
+      byCountry[a.country].airports.push(a);
+    });
+    for (const group of Object.values(byCountry)) {
+      const header = document.createElement('div');
+      header.className = 'dropdown-country-header';
+      header.innerHTML = `<span class="country-header-name">${group.name}</span>
+        <div class="country-header-btns">
+          <button type="button" class="country-select-all">${t('select_all')}</button>
+          <button type="button" class="country-deselect-all">${t('deselect_all')}</button>
+        </div>`;
+      header.querySelector('.country-select-all').addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        group.airports.forEach(a => { const ok = getAllowedFn ? getAllowedFn(a) : true; if (ok) selected.add(a.iata); });
+        const groupCountry = group.airports[0]?.country;
+        if (groupCountry === 'AK' || groupCountry === 'US') syncAlaskaUS(true, false);
+        renderTags(); updateTriggerText(); renderSearchList(searchInput.value); onChangeCb?.();
+      });
+      header.querySelector('.country-deselect-all').addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        group.airports.forEach(a => selected.delete(a.iata));
+        const groupCountry = group.airports[0]?.country;
+        if (groupCountry === 'AK' || groupCountry === 'US') syncAlaskaUS(false, true);
+        renderTags(); updateTriggerText(); renderSearchList(searchInput.value); onChangeCb?.();
+      });
+      list.appendChild(header);
+      group.airports.forEach(a => renderAirportOption(a, list));
+    }
+  }
 
   function openDropdown() {
     dropdown.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
     searchInput.value = '';
-    renderList('');
+    // Show map wrapper, hide search list
+    list.style.display = 'none';
+    mapWrapper.style.display = '';
+    // Reset country selection and show all continent airports
+    activeCountry = null;
+    injectedSvgEl?.querySelectorAll('.active-country').forEach(p => p.classList.remove('active-country'));
+    mapInjected = null; // force re-render so continent airports are freshly shown
+    renderContinent(activeContinent);
+    // On mobile: pin the dropdown to the full viewport width using fixed positioning
+    if (window.innerWidth <= 640) {
+      const rect = trigger.getBoundingClientRect();
+      const availableH = window.innerHeight - rect.bottom - 8; // 8px breathing room
+      const w = window.innerWidth * 0.95;
+      const h = Math.max(availableH, 300) * 0.95;
+      dropdown.style.position = 'fixed';
+      dropdown.style.top = rect.bottom + 'px';
+      dropdown.style.left = ((window.innerWidth - w) / 2) + 'px'; // centered
+      dropdown.style.right = ((window.innerWidth - w) / 2) + 'px'; // clamp right edge
+      dropdown.style.width = w + 'px';
+      dropdown.style.minWidth = 'unset';
+      dropdown.style.maxWidth = w + 'px';
+      dropdown.style.maxHeight = h + 'px';
+    }
     searchInput.focus();
   }
 
@@ -110,123 +570,15 @@ function createAirportSelector(selectorEl, tagsEl) {
     dropdown.classList.remove('open');
     trigger.setAttribute('aria-expanded', 'false');
     searchInput.value = '';
-  }
-
-  function addCountry(airports) {
-    airports.forEach(a => {
-      const allowed = getAllowedFn ? getAllowedFn(a) : true;
-      if (!selected.has(a.iata) && allowed) selected.add(a.iata);
-    });
-    renderTags();
-    updateTriggerText();
-    searchInput.value = '';
-    renderList('');
-    searchInput.focus();
-    onChangeCb?.();
-  }
-
-  function renderList(query) {
-    const q = query.trim().toLowerCase();
-    const filtered = AIRPORTS.filter(a => {
-      if (!q) return true;
-      return (
-        a.iata.toLowerCase().includes(q) ||
-        a.name.toLowerCase().includes(q) ||
-        a.city.toLowerCase().includes(q) ||
-        a.country.toLowerCase().includes(q) ||
-        countryLabel(a.country).toLowerCase().includes(q)
-      );
-    });
-
-    list.innerHTML = '';
-    if (filtered.length === 0) {
-      list.innerHTML = `<div class="no-results">${t('no_results')}</div>`;
-      return;
-    }
-
-    const byCountry = {};
-    filtered.forEach(a => {
-      if (!byCountry[a.country]) byCountry[a.country] = { name: countryLabel(a.country), airports: [] };
-      byCountry[a.country].airports.push(a);
-    });
-
-    for (const group of Object.values(byCountry)) {
-      const header = document.createElement('div');
-      header.className = 'dropdown-country-header';
-      header.innerHTML = `<span class="country-header-name">${group.name}</span>
-        <div class="country-header-btns">
-          <button type="button" class="country-select-all" title="${t('select_all')}">${t('select_all')}</button>
-          <button type="button" class="country-deselect-all" title="${t('deselect_all')}">${t('deselect_all')}</button>
-        </div>`;
-      header.querySelector('.country-select-all').addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        addCountry(group.airports);
-      });
-      header.querySelector('.country-deselect-all').addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        group.airports.forEach(a => selected.delete(a.iata));
-        renderTags();
-        updateTriggerText();
-        renderList(searchInput.value);
-        onChangeCb?.();
-      });
-      list.appendChild(header);
-
-      group.airports.forEach(a => {
-        const allowed = getAllowedFn ? getAllowedFn(a) : true;
-        const el = document.createElement('div');
-        el.className = 'airport-option' + (selected.has(a.iata) ? ' selected' : '') + (allowed ? '' : ' no-route');
-        el.setAttribute('role', 'option');
-        el.setAttribute('tabindex', '-1');
-        el.innerHTML = `<span class="iata">${a.iata}</span><span class="airport-city">${a.city}</span><span class="airport-name">${a.name}</span>${selected.has(a.iata) ? '<span class="option-check">\u2713</span>' : ''}`;
-        el.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          if (!allowed) return;
-          if (selected.has(a.iata)) {
-            removeAirport(a.iata);
-            renderList(searchInput.value);
-          } else {
-            addAirport(a);
-          }
-        });
-        el.addEventListener('keydown', (e) => {
-          if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            let next = el.nextElementSibling;
-            while (next && !next.classList.contains('airport-option')) next = next.nextElementSibling;
-            if (next) next.focus();
-          } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            let prev = el.previousElementSibling;
-            while (prev && !prev.classList.contains('airport-option')) prev = prev.previousElementSibling;
-            if (prev) prev.focus(); else searchInput.focus();
-          } else if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            if (!allowed) return;
-            if (selected.has(a.iata)) {
-              removeAirport(a.iata);
-              renderList(searchInput.value);
-            } else {
-              addAirport(a);
-            }
-          } else if (e.key === 'Escape') {
-            closeDropdown();
-            trigger.focus();
-          }
-        });
-        list.appendChild(el);
-      });
-    }
-  }
-
-  function addAirport(airport) {
-    if (selected.has(airport.iata)) return;
-    selected.add(airport.iata);
-    renderTags();
-    updateTriggerText();
-    renderList(searchInput.value);
-    searchInput.focus();
-    onChangeCb?.();
+    // Reset any mobile fixed positioning
+    dropdown.style.position = '';
+    dropdown.style.top = '';
+    dropdown.style.left = '';
+    dropdown.style.right = '';
+    dropdown.style.width = '';
+    dropdown.style.minWidth = '';
+    dropdown.style.maxWidth = '';
+    dropdown.style.maxHeight = '';
   }
 
   function removeAirport(iata) {
@@ -234,6 +586,8 @@ function createAirportSelector(selectorEl, tagsEl) {
     renderTags();
     updateTriggerText();
     onChangeCb?.();
+    if (activeCountry) renderCountryAirports(activeCountry, apSearchInput.value);
+    else if (activeContinent) renderContinentAirports(activeContinent, apSearchInput.value);
   }
 
   function updateTriggerText() {
@@ -256,14 +610,14 @@ function createAirportSelector(selectorEl, tagsEl) {
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
     if (e.target.closest('.tag button')) return;
-    openDropdown();
+    if (dropdown.classList.contains('open')) { closeDropdown(); } else { openDropdown(); }
   });
 
   searchInput.addEventListener('focus', () => {
     if (!dropdown.classList.contains('open')) openDropdown();
   });
 
-  searchInput.addEventListener('input', () => renderList(searchInput.value));
+  searchInput.addEventListener('input', () => renderSearchList(searchInput.value));
 
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { closeDropdown(); trigger.focus(); }
@@ -274,8 +628,16 @@ function createAirportSelector(selectorEl, tagsEl) {
     }
   });
 
-  // Prevent clicks inside dropdown from bubbling to document
-  dropdown.addEventListener('mousedown', (e) => e.stopPropagation());
+  // Prevent clicks inside dropdown from bubbling to document.
+  // Also prevent non-interactive elements (SVG water, map backgrounds) from
+  // stealing focus away from the search input — otherwise clicking on the ocean
+  // triggers focusout with relatedTarget=null and closes the dropdown.
+  dropdown.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    if (!e.target.matches('input, button, textarea, select, [tabindex="0"]')) {
+      e.preventDefault();
+    }
+  });
 
   document.addEventListener('click', (e) => {
     if (!selectorEl.contains(e.target)) closeDropdown();
@@ -294,7 +656,14 @@ function createAirportSelector(selectorEl, tagsEl) {
       renderTags();
       updateTriggerText();
     },
-    refresh:         () => renderList(searchInput.value),
+    refresh:         () => {
+      continentBar.querySelectorAll('.map-continent-btn').forEach(btn => {
+        btn.textContent = t('continent_' + btn.dataset.continent) || btn.textContent;
+      });
+      apSearchInput.placeholder = t('map_search_placeholder') || 'Buscar aeropuerto…';
+      if (activeCountry) renderCountryAirports(activeCountry, apSearchInput.value);
+      else if (activeContinent) renderContinentAirports(activeContinent, apSearchInput.value);
+    },
     setGetAllowed:   (fn) => { getAllowedFn = fn; },
     setOnChange:     (fn) => { onChangeCb = fn; },
     clearDisallowed: () => {
@@ -304,7 +673,7 @@ function createAirportSelector(selectorEl, tagsEl) {
       toRemove.forEach(a => selected.delete(a.iata));
       renderTags();
       updateTriggerText();
-      renderList(searchInput.value);
+      if (activeCountry) renderCountryAirports(activeCountry, apSearchInput.value);
       onChangeCb?.();
     },
   };
