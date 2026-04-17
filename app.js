@@ -548,16 +548,16 @@ function createAirportSelector(selectorEl, tagsEl) {
     injectedSvgEl?.querySelectorAll('.active-country').forEach(p => p.classList.remove('active-country'));
     mapInjected = null; // force re-render so continent airports are freshly shown
     renderContinent(activeContinent);
-    // On mobile: pin the dropdown to the full viewport width using fixed positioning
+    // On mobile: pin the dropdown just below the header so it always has max vertical space
     if (window.innerWidth <= 640) {
-      const rect = trigger.getBoundingClientRect();
-      const availableH = window.innerHeight - rect.bottom - 8; // 8px breathing room
+      const headerEl = document.querySelector('header');
+      const topPos = headerEl ? headerEl.getBoundingClientRect().bottom + 8 : 64;
       const w = window.innerWidth * 0.95;
-      const h = Math.max(availableH, 300) * 0.95;
+      const h = window.innerHeight - topPos - 8;
       dropdown.style.position = 'fixed';
-      dropdown.style.top = rect.bottom + 'px';
-      dropdown.style.left = ((window.innerWidth - w) / 2) + 'px'; // centered
-      dropdown.style.right = ((window.innerWidth - w) / 2) + 'px'; // clamp right edge
+      dropdown.style.top = topPos + 'px';
+      dropdown.style.left = ((window.innerWidth - w) / 2) + 'px';
+      dropdown.style.right = ((window.innerWidth - w) / 2) + 'px';
       dropdown.style.width = w + 'px';
       dropdown.style.minWidth = 'unset';
       dropdown.style.maxWidth = w + 'px';
