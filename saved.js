@@ -170,7 +170,7 @@ async function refreshSavedFlight(v, btn) {
   };
 
   try {
-    const res = await fetch(`${API_BASE}/api/price`, {
+    const res = await apiFetch(`${API_BASE}/api/price`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),

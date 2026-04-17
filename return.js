@@ -189,7 +189,7 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
   // Poll /api/progress while return search runs
   const returnProgressInterval = setInterval(async () => {
     try {
-      const r = await fetch(`${API_BASE}/api/progress`);
+      const r = await apiFetch(`${API_BASE}/api/progress`);
       if (!r.ok) return;
       const { percent, message } = await r.json();
       const fill   = returnSection.querySelector('#progressFill');
@@ -202,7 +202,7 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
   }, 600);
 
   try {
-    const res = await fetch(`${API_BASE}/api/search`, {
+    const res = await apiFetch(`${API_BASE}/api/search`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),

@@ -114,7 +114,7 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
   let searchPhase = 0; // 0 = outbound, 1 = return
   const progressInterval = setInterval(async () => {
     try {
-      const r = await fetch(`${API_BASE}/api/progress`);
+      const r = await apiFetch(`${API_BASE}/api/progress`);
       if (!r.ok) return;
       const { percent, message } = await r.json();
       const fill   = document.getElementById('progressFill');
@@ -135,7 +135,7 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
   }, 600);
 
   try {
-    const resOut = await fetch(`${API_BASE}/api/search`, {
+    const resOut = await apiFetch(`${API_BASE}/api/search`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadOut),
     });
@@ -148,7 +148,7 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     searchPhase = 1;
     submitBtn.textContent = t('express_searching_ret');
 
-    const resRet = await fetch(`${API_BASE}/api/search`, {
+    const resRet = await apiFetch(`${API_BASE}/api/search`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadRet),
     });

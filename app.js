@@ -337,9 +337,15 @@ selectorTo.setGetAllowed(a => {
 selectorFrom.setOnChange(() => selectorTo.refresh());
 selectorTo.setOnChange(() => selectorFrom.refresh());
 
-const API_BASE = (!location.hostname || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
   ? 'http://localhost:8000'
   : 'https://welcome-airedale-commonly.ngrok-free.app';
+
+// Wrapper that adds the ngrok browser-warning bypass header on every request
+function apiFetch(url, options = {}) {
+  const headers = { 'ngrok-skip-browser-warning': 'true', ...(options.headers || {}) };
+  return fetch(url, { ...options, headers });
+}
 
 if (!location.hostname || location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
   document.getElementById('devModeToggle').style.display = '';
@@ -431,7 +437,7 @@ logCopyBtn.addEventListener('click', () => {
 logLevelSelect.addEventListener('change', async () => {
   const level = parseInt(logLevelSelect.value);
   try {
-    await fetch(`${API_BASE}/api/log-level`, {
+    await apiFetch(`${API_BASE}/api/log-level`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ level }),
@@ -444,7 +450,7 @@ logLevelSelect.addEventListener('change', async () => {
 async function fetchLogs() {
   if (logPaused) return;
   try {
-    const res  = await fetch(`${API_BASE}/api/logs`);
+    const res  = await apiFetch(`${API_BASE}/api/logs`);
     if (!res.ok) { logDot.className = 'log-dot error'; return; }
     const data = await res.json();
     const logs = data.logs || [];
@@ -504,7 +510,7 @@ async function ensureBackendAwake(statusEl) {
 
   try {
     await Promise.race([
-      fetch(`${API_BASE}/api/ping`).then(r => { if (!r.ok) throw new Error(); }),
+      apiFetch(`${API_BASE}/api/ping`).then(r => { if (!r.ok) throw new Error(); }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 35000)),
     ]);
   } catch {
@@ -567,7 +573,7 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
   // Poll /api/progress while search runs
   const progressInterval = setInterval(async () => {
     try {
-      const r = await fetch(`${API_BASE}/api/progress`);
+      const r = await apiFetch(`${API_BASE}/api/progress`);
       if (!r.ok) return;
       const { percent, message } = await r.json();
       const fill   = document.getElementById('progressFill');
@@ -586,7 +592,7 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
   }, 600);
 
   try {
-    const res = await fetch(`${API_BASE}/api/search`, {
+    const res = await apiFetch(`${API_BASE}/api/search`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
