@@ -1655,6 +1655,31 @@ select:focus {
   background: #fef2f2;
 }
 
+/* ── Book / URL button ── */
+.book-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.5rem;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.book-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(232,112,58,0.08);
+  transform: scale(1.1);
+}
+:root[data-theme="light"] .book-btn:hover {
+  background: rgba(212,94,40,0.08);
+}
+
 /* ── Refresh button ── */
 .refresh-btn {
   background: none;

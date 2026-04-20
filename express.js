@@ -299,6 +299,7 @@ function expressCard(v) {
       <div class="card-footer">
         <span class="card-price">${v.precio}</span>
         <div class="card-footer-right">
+          ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="Ver vuelo">&#x2197;</a>` : ''}
           <button class="ex-combine-btn${isSelected ? ' ex-combine-selected' : ''}" data-id="${id}"
             title="${isSelected ? t('ex_combine_cancel') : t('ex_combine_hint')}">
             ${isSelected ? t('ex_combine_btn_selected') : t('ex_combine_btn')}
