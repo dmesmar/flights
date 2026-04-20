@@ -136,7 +136,7 @@ function renderResults(data) {
           <div class="card-footer">
             <span class="card-price">${v.precio}</span>
             <div class="card-footer-right">
-              ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="Ver vuelo">&#x2197;</a>` : ''}
+              ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="${t('book_btn_title')}">${t('book_btn_text')}</a>` : ''}
               <button class="save-btn${saved ? ' save-btn-active' : ''}" data-id="${id}" title="${saved ? 'Quitar de guardados' : 'Guardar vuelo'}">${saved ? '♥' : '♡'}</button>
             </div>
           </div>
@@ -432,7 +432,9 @@ function renderFlightCard(v, mode) {
       </div>
       <div class="card-footer">
         <span class="card-price">${v.precio}</span>
-        <div class="card-footer-right">          ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="Ver vuelo">↗</a>` : ''}          ${mode === 'return'
+        <div class="card-footer-right">
+          ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="${t('book_btn_title')}">${t('book_btn_text')}</a>` : ''}
+          ${mode === 'return'
             ? `<button class="select-return-btn" data-id="${id}" title="${t('btn_select_title')}">${t('btn_select_return')}</button>`
             : `<button class="return-btn" data-id="${id}" title="${t('btn_return_title')}">${t('btn_return_short')}</button>`
           }

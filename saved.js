@@ -123,7 +123,7 @@ function renderSavedTab() {
               <span class="card-price">${v.precio}</span>
             </div>
             <div class="card-footer-right">
-              ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="Ver vuelo">↗</a>` : ''}
+              ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="${t('book_btn_title')}">${t('book_btn_text')}</a>` : ''}
               <button class="return-btn" data-id="${id}" title="${t('btn_return_title')}">${t('btn_return_short')}</button></button>
               <button class="refresh-btn" data-id="${id}" title="${t('refresh_btn_title')}">↻</button>
               <button class="save-btn save-btn-active" data-id="${id}" title="${t('save_title_saved')}">♥</button>

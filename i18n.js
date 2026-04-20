@@ -84,6 +84,8 @@ const I18N = {
     btn_return_title:     'Buscar vuelo de vuelta',
     btn_select_return:    '✓ Elegir vuelta',
     btn_select_title:     'Elegir como vuelo de vuelta',
+    book_btn_text:        '↗ Enlace',
+    book_btn_title:       'Ver vuelo en Google Flights',
 
     /* ── Filter bar ── */
     filter_title:        '🔧 Filtrar y ordenar',
@@ -322,6 +324,8 @@ const I18N = {
     btn_return_title:     'Search return flight',
     btn_select_return:    '✓ Select return',
     btn_select_title:     'Select as return flight',
+    book_btn_text:        '↗ Link',
+    book_btn_title:       'View flight on Google Flights',
 
     /* ── Filter bar ── */
     filter_title:        '🔧 Filter & sort',
