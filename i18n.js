@@ -20,7 +20,7 @@ const I18N = {
     tab_logs_text:    'Logs',
 
     /* ── Search form ── */
-    search_title:              'Buscar vuelos',
+    search_title:              'Buscar vuelos de ida',
     label_date_from:           'Fecha inicio',
     label_date_to:             'Fecha fin',
     label_days:                'Días de la semana',
@@ -208,6 +208,22 @@ const I18N = {
     conn_error_full: 'No se pudo conectar con el servidor. Inténtalo de nuevo en unos segundos.',
     import_invalid:  'El archivo no es un JSON de exprés válido.',
 
+    /* ── Date presets ── */
+    date_presets_toggle:  '📅 Selección rápida de fechas',
+    preset_this_weekend:  'Este fin de semana',
+    preset_next_weekend:  'Próximo fin de semana',
+    preset_this_month:    'Este mes',
+    preset_next_month:    'Próximo mes',
+    preset_next_2weeks:   'Próximas 2 semanas',
+    preset_next_4weeks:   'Próximas 4 semanas',
+    preset_next_2months:  'Próximos 2 meses',
+    preset_next_3months:  'Próximos 3 meses',
+    preset_single_month:  '📅 Mes entero',
+    preset_full_month:    '📆 Rango de meses',
+    preset_full_month_ph: 'Elige mes y año',
+    preset_range_from:    'Desde',
+    preset_range_to:      'Hasta',
+
     /* ── Date/time ── */
     weekdays: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
     months:   ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
@@ -260,7 +276,7 @@ const I18N = {
     tab_logs_text:    'Logs',
 
     /* ── Search form ── */
-    search_title:              'Search flights',
+    search_title:              'Search flights (One-way)',
     label_date_from:           'Start date',
     label_date_to:             'End date',
     label_days:                'Days of the week',
@@ -447,6 +463,22 @@ const I18N = {
     conn_error:      'Could not connect to the backend.',
     conn_error_full: 'Could not connect to the server. Please try again in a few seconds.',
     import_invalid:  'The file is not a valid express JSON.',
+
+    /* ── Date presets ── */
+    date_presets_toggle:  '📅 Quick date selection',
+    preset_this_weekend:  'This weekend',
+    preset_next_weekend:  'Next weekend',
+    preset_this_month:    'This month',
+    preset_next_month:    'Next month',
+    preset_next_2weeks:   'Next 2 weeks',
+    preset_next_4weeks:   'Next 4 weeks',
+    preset_next_2months:  'Next 2 months',
+    preset_next_3months:  'Next 3 months',
+    preset_single_month:  '📅 Full month',
+    preset_full_month:    '📆 Month range',
+    preset_full_month_ph: 'Choose month and year',
+    preset_range_from:    'From',
+    preset_range_to:      'To',
 
     /* ── Date/time ── */
     weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],

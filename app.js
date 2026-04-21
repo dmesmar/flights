@@ -89,6 +89,187 @@ stopsRow.addEventListener('click', (e) => {
 });
 
 
+/* ═══════════════════════════════════════════
+   DATE PRESETS
+═══════════════════════════════════════════ */
+function _toYMD(d) {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function applyDatePreset(preset, iniId, finId) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dow = today.getDay(); // 0=Sun … 6=Sat
+  let start, end;
+
+  switch (preset) {
+    case 'this-weekend': {
+      // Nearest Friday (if already past the weekend, show this Fri-Sun)
+      let fri = new Date(today);
+      if (dow === 6) fri.setDate(today.getDate() - 1);       // Sat → prev Fri
+      else if (dow === 0) fri.setDate(today.getDate() - 2);  // Sun → prev Fri
+      else fri.setDate(today.getDate() + (5 - dow));          // Mon-Fri → coming Fri
+      start = fri;
+      end = new Date(fri); end.setDate(fri.getDate() + 2);   // Sun
+      break;
+    }
+    case 'next-weekend': {
+      let fri = new Date(today);
+      if (dow === 6) fri.setDate(today.getDate() + 6);       // Sat → next Fri
+      else if (dow === 0) fri.setDate(today.getDate() + 5);  // Sun → next Fri
+      else fri.setDate(today.getDate() + (5 - dow) + 7);     // Mon-Fri → next Fri
+      start = fri;
+      end = new Date(fri); end.setDate(fri.getDate() + 2);
+      break;
+    }
+    case 'this-month': {
+      start = new Date(today);
+      end = new Date(today.getFullYear(), today.getMonth() + 1, 0); // last day of current month
+      break;
+    }
+    case 'next-month': {
+      start = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+      end   = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+      break;
+    }
+    case 'next-2weeks': {
+      start = new Date(today);
+      end = new Date(today); end.setDate(today.getDate() + 13);
+      break;
+    }
+    case 'next-4weeks': {
+      start = new Date(today);
+      end = new Date(today); end.setDate(today.getDate() + 27);
+      break;
+    }
+    case 'next-2months': {
+      start = new Date(today);
+      end   = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
+      break;
+    }
+    case 'next-3months': {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+      end   = new Date(today.getFullYear(), today.getMonth() + 3, 1);
+      break;
+    }
+    default: return;
+  }
+
+  document.getElementById(iniId).value = _toYMD(start);
+  document.getElementById(finId).value = _toYMD(end);
+}
+
+function setupDatePresets(containerId, iniId, finId) {
+  const container      = document.getElementById(containerId);
+  if (!container) return;
+  const rangePicker    = container.querySelector('.month-picker-wrap:not(.single-month-wrap)');
+  const singlePicker   = container.querySelector('.single-month-wrap');
+  const yearFromSel    = container.querySelector('.year-from-sel');
+  const monthFromSel   = container.querySelector('.month-from-sel');
+  const yearToSel      = container.querySelector('.year-to-sel');
+  const monthToSel     = container.querySelector('.month-to-sel');
+  const yearSingleSel  = container.querySelector('.year-single-sel');
+  const monthSingleSel = container.querySelector('.month-single-sel');
+
+  const MONTH_NAMES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const MONTH_NAMES_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  function buildYearOptions(sel, defaultYear) {
+    const cur = sel.value ? parseInt(sel.value) : defaultYear;
+    const now = new Date().getFullYear();
+    sel.innerHTML = '';
+    for (let y = now; y <= now + 2; y++) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      if (y === cur) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  function buildMonthOptions(sel, defaultMonth) {
+    const names = (typeof currentLang !== 'undefined' && currentLang === 'en') ? MONTH_NAMES_EN : MONTH_NAMES_ES;
+    const cur = sel.value ? parseInt(sel.value) : defaultMonth;
+    sel.innerHTML = '';
+    names.forEach((name, i) => {
+      const opt = document.createElement('option');
+      opt.value = i + 1; opt.textContent = name;
+      if (i + 1 === cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function fillSelects() {
+    const now = new Date();
+    if (yearFromSel)    buildYearOptions(yearFromSel,    now.getFullYear());
+    if (yearToSel)      buildYearOptions(yearToSel,      now.getFullYear());
+    if (monthFromSel)   buildMonthOptions(monthFromSel,  now.getMonth() + 1);
+    if (monthToSel)     buildMonthOptions(monthToSel,    now.getMonth() + 1);
+    if (yearSingleSel)  buildYearOptions(yearSingleSel,  now.getFullYear());
+    if (monthSingleSel) buildMonthOptions(monthSingleSel, now.getMonth() + 1);
+  }
+
+  function applyRangePicker() {
+    const yearFrom  = parseInt(yearFromSel.value);
+    const monthFrom = parseInt(monthFromSel.value);
+    const yearTo    = parseInt(yearToSel.value);
+    const monthTo   = parseInt(monthToSel.value);
+    const tsFrom = yearFrom * 12 + monthFrom;
+    const tsTo   = yearTo   * 12 + monthTo;
+    const [yS, mS, yE, mE] = tsFrom <= tsTo
+      ? [yearFrom, monthFrom, yearTo, monthTo]
+      : [yearTo,   monthTo,   yearFrom, monthFrom];
+    document.getElementById(iniId).value = _toYMD(new Date(yS, mS - 1, 1));
+    document.getElementById(finId).value = _toYMD(new Date(yE, mE, 0));
+  }
+
+  function applySinglePicker() {
+    const year  = parseInt(yearSingleSel.value);
+    const month = parseInt(monthSingleSel.value);
+    document.getElementById(iniId).value = _toYMD(new Date(year, month - 1, 1));
+    document.getElementById(finId).value = _toYMD(new Date(year, month, 0));
+  }
+
+  function closeAll() {
+    rangePicker?.classList.remove('open');
+    singlePicker?.classList.remove('open');
+    container.querySelectorAll('.date-preset-fullmonth, .date-preset-singlemonth').forEach(b => b.classList.remove('active'));
+  }
+
+  fillSelects();
+  if (typeof onLangChange === 'function') onLangChange(fillSelects);
+  if (yearFromSel && monthFromSel && yearToSel && monthToSel)
+    [yearFromSel, monthFromSel, yearToSel, monthToSel].forEach(s => s.addEventListener('change', applyRangePicker));
+  if (yearSingleSel && monthSingleSel)
+    [yearSingleSel, monthSingleSel].forEach(s => s.addEventListener('change', applySinglePicker));
+
+  container.querySelectorAll('.date-preset-btn').forEach(btn => {
+    if (btn.classList.contains('date-preset-singlemonth')) {
+      btn.addEventListener('click', () => {
+        const opening = !singlePicker?.classList.contains('open');
+        closeAll();
+        if (opening) { singlePicker?.classList.add('open'); btn.classList.add('active'); yearSingleSel?.focus(); }
+      });
+    } else if (btn.classList.contains('date-preset-fullmonth')) {
+      btn.addEventListener('click', () => {
+        const opening = !rangePicker?.classList.contains('open');
+        closeAll();
+        if (opening) { rangePicker?.classList.add('open'); btn.classList.add('active'); yearFromSel?.focus(); }
+      });
+    } else {
+      btn.addEventListener('click', () => {
+        closeAll();
+        container.querySelectorAll('.date-preset-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyDatePreset(btn.dataset.preset, iniId, finId);
+      });
+    }
+  });
+}
+
+setupDatePresets('datePresets', 'fechaIni', 'fechaFin');
+
 /* ── Country display helper ── */
 function countryLabel(code) {
   return (COUNTRY_FLAGS[code] || '') + ' ' + (t('country_' + code) || code);

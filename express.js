@@ -57,6 +57,9 @@ document.getElementById('exDayBtnsRow')?.addEventListener('click', (e) => {
   btn.classList.toggle('active');
 });
 
+/* ── Date presets ── */
+setupDatePresets('exDatePresets', 'exFechaIni', 'exFechaFin');
+
 /* ── Form submit ── */
 document.getElementById('expressForm').addEventListener('submit', async (e) => {
   e.preventDefault();

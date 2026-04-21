@@ -61,6 +61,32 @@
           </div>
         </div>
 
+        <!-- Date presets -->
+        <details class="advanced-settings" id="datePresets">
+          <summary data-i18n="date_presets_toggle">📅 Selección rápida de fechas</summary>
+          <div class="advanced-body date-presets-body">
+            <button type="button" class="date-preset-btn" data-preset="this-weekend" data-i18n="preset_this_weekend">Este fin de semana</button>
+            <button type="button" class="date-preset-btn" data-preset="next-weekend" data-i18n="preset_next_weekend">Próximo fin de semana</button>
+            <button type="button" class="date-preset-btn" data-preset="next-2weeks" data-i18n="preset_next_2weeks">Próximas 2 semanas</button>
+            <button type="button" class="date-preset-btn" data-preset="next-2months" data-i18n="preset_next_2months">Próximos 2 meses</button>
+            <button type="button" class="date-preset-btn" data-preset="next-3months" data-i18n="preset_next_3months">Próximos 3 meses</button>
+            <button type="button" class="date-preset-btn date-preset-singlemonth" data-i18n="preset_single_month">📅 Mes entero</button>
+            <div class="month-picker-wrap single-month-wrap">
+              <select class="month-picker-sel year-single-sel"></select>
+              <select class="month-picker-sel month-single-sel"></select>
+            </div>
+            <button type="button" class="date-preset-btn date-preset-fullmonth" data-i18n="preset_full_month">📆 Rango de meses</button>
+            <div class="month-picker-wrap">
+              <label class="month-picker-label" data-i18n="preset_range_from">Desde</label>
+              <select class="month-picker-sel year-from-sel"></select>
+              <select class="month-picker-sel month-from-sel"></select>
+              <label class="month-picker-label" data-i18n="preset_range_to">Hasta</label>
+              <select class="month-picker-sel year-to-sel"></select>
+              <select class="month-picker-sel month-to-sel"></select>
+            </div>
+          </div>
+        </details>
+
         <div class="form-row">
           <div class="form-group">
             <label data-i18n="label_origin">Origen</label>
@@ -170,6 +196,32 @@
             <input type="date" id="exFechaFin" required />
           </div>
         </div>
+
+        <!-- Date presets (express) -->
+        <details class="advanced-settings" id="exDatePresets">
+          <summary data-i18n="date_presets_toggle">📅 Selección rápida de fechas</summary>
+          <div class="advanced-body date-presets-body">
+            <button type="button" class="date-preset-btn" data-preset="this-weekend" data-i18n="preset_this_weekend">Este fin de semana</button>
+            <button type="button" class="date-preset-btn" data-preset="next-weekend" data-i18n="preset_next_weekend">Próximo fin de semana</button>
+            <button type="button" class="date-preset-btn" data-preset="next-2weeks" data-i18n="preset_next_2weeks">Próximas 2 semanas</button>
+            <button type="button" class="date-preset-btn" data-preset="next-2months" data-i18n="preset_next_2months">Próximos 2 meses</button>
+            <button type="button" class="date-preset-btn" data-preset="next-3months" data-i18n="preset_next_3months">Próximos 3 meses</button>
+            <button type="button" class="date-preset-btn date-preset-singlemonth" data-i18n="preset_single_month">📅 Mes entero</button>
+            <div class="month-picker-wrap single-month-wrap">
+              <select class="month-picker-sel year-single-sel"></select>
+              <select class="month-picker-sel month-single-sel"></select>
+            </div>
+            <button type="button" class="date-preset-btn date-preset-fullmonth" data-i18n="preset_full_month">📆 Rango de meses</button>
+            <div class="month-picker-wrap">
+              <label class="month-picker-label" data-i18n="preset_range_from">Desde</label>
+              <select class="month-picker-sel year-from-sel"></select>
+              <select class="month-picker-sel month-from-sel"></select>
+              <label class="month-picker-label" data-i18n="preset_range_to">Hasta</label>
+              <select class="month-picker-sel year-to-sel"></select>
+              <select class="month-picker-sel month-to-sel"></select>
+            </div>
+          </div>
+        </details>
 
         <div class="form-row">
           <div class="form-group">
