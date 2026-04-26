@@ -12,6 +12,21 @@ const themeIcon   = document.getElementById('themeIcon');
 const themeLabel  = document.getElementById('themeLabel');
 const html        = document.documentElement;
 
+/* ── Simple Search Mode ── */
+let simpleSearchMode = true; // default ON — hides the map in airport dropdowns
+
+function setSimpleSearchMode(val) {
+  simpleSearchMode = val;
+  // Persist
+  try { localStorage.setItem('simpleSearchMode', val ? '1' : '0'); } catch(e) {}
+}
+
+// Restore from localStorage
+try {
+  const stored = localStorage.getItem('simpleSearchMode');
+  if (stored !== null) simpleSearchMode = stored !== '0';
+} catch(e) {}
+
 /* ── Scroll-to-top button ── */
 const scrollTopBtn = document.getElementById('scrollTopBtn');
 window.addEventListener('scroll', () => {
@@ -291,7 +306,7 @@ if (typeof CONTINENT_MAPS !== 'undefined') {
 /* ═══════════════════════════════════════════
    AIRPORT SELECTOR FACTORY
 ═══════════════════════════════════════════ */
-function createAirportSelector(selectorEl, tagsEl) {
+function createAirportSelector(selectorEl, tagsEl, { forceSimple = false } = {}) {
   const trigger        = selectorEl.querySelector('.airport-trigger');
   const dropdown       = selectorEl.querySelector('.airport-dropdown');
   const searchInput    = selectorEl.querySelector('.dropdown-search-input');
@@ -672,12 +687,51 @@ function createAirportSelector(selectorEl, tagsEl) {
   }
 
   // Search list mode (text query)
+  function isSimple() { return simpleSearchMode || forceSimple; }
+
   function renderSearchList(query) {
     const q = query.trim().toLowerCase();
-    if (!q) {
+    if (!q && !isSimple()) {
       list.innerHTML = '';
       list.style.display = 'none';
       mapWrapper.style.display = '';
+      return;
+    }
+    if (!q && isSimple()) {
+      // Simple mode with no query: show all airports grouped by country
+      list.style.display = '';
+      mapWrapper.style.display = 'none';
+      list.innerHTML = '';
+      const byCountry = {};
+      AIRPORTS.forEach(a => {
+        if (!byCountry[a.country]) byCountry[a.country] = { name: countryLabel(a.country), airports: [] };
+        byCountry[a.country].airports.push(a);
+      });
+      for (const group of Object.values(byCountry)) {
+        const header = document.createElement('div');
+        header.className = 'dropdown-country-header';
+        header.innerHTML = `<span class="country-header-name">${group.name}</span>
+          <div class="country-header-btns">
+            <button type="button" class="country-select-all">${t('select_all')}</button>
+            <button type="button" class="country-deselect-all">${t('deselect_all')}</button>
+          </div>`;
+        header.querySelector('.country-select-all').addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          group.airports.forEach(a => { const ok = getAllowedFn ? getAllowedFn(a) : true; if (ok) selected.add(a.iata); });
+          const groupCountry = group.airports[0]?.country;
+          if (groupCountry === 'AK' || groupCountry === 'US') syncAlaskaUS(true, false);
+          renderTags(); updateTriggerText(); renderSearchList(searchInput.value); onChangeCb?.();
+        });
+        header.querySelector('.country-deselect-all').addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          group.airports.forEach(a => selected.delete(a.iata));
+          const groupCountry = group.airports[0]?.country;
+          if (groupCountry === 'AK' || groupCountry === 'US') syncAlaskaUS(false, true);
+          renderTags(); updateTriggerText(); renderSearchList(searchInput.value); onChangeCb?.();
+        });
+        list.appendChild(header);
+        group.airports.forEach(a => renderAirportOption(a, list));
+      }
       return;
     }
     list.style.display = '';
@@ -730,14 +784,20 @@ function createAirportSelector(selectorEl, tagsEl) {
     dropdown.classList.add('open');
     trigger.setAttribute('aria-expanded', 'true');
     searchInput.value = '';
-    // Show map wrapper, hide search list
-    list.style.display = 'none';
-    mapWrapper.style.display = '';
-    // Reset country selection and show all continent airports
-    activeCountry = null;
-    injectedSvgEl?.querySelectorAll('.active-country').forEach(p => p.classList.remove('active-country'));
-    mapInjected = null; // force re-render so continent airports are freshly shown
-    renderContinent(activeContinent);
+    if (isSimple()) {
+      // Simple mode: hide map, show full airport list directly
+      mapWrapper.style.display = 'none';
+      renderSearchList('');
+    } else {
+      // Full mode: show map wrapper, hide search list
+      list.style.display = 'none';
+      mapWrapper.style.display = '';
+      // Reset country selection and show all continent airports
+      activeCountry = null;
+      injectedSvgEl?.querySelectorAll('.active-country').forEach(p => p.classList.remove('active-country'));
+      mapInjected = null; // force re-render so continent airports are freshly shown
+      renderContinent(activeContinent);
+    }
     // On mobile: pin the dropdown just below the header so it always has max vertical space
     if (window.innerWidth <= 640) {
       const headerEl = document.querySelector('header');
@@ -799,7 +859,14 @@ function createAirportSelector(selectorEl, tagsEl) {
 
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Click on tag remove button: handled separately
     if (e.target.closest('.tag button')) return;
+    // Click directly on the search input: just ensure open, don't toggle closed
+    if (e.target === searchInput) {
+      if (!dropdown.classList.contains('open')) openDropdown();
+      return;
+    }
+    // Toggle on the rest of the trigger area
     if (dropdown.classList.contains('open')) { closeDropdown(); } else { openDropdown(); }
   });
 
@@ -840,8 +907,16 @@ function createAirportSelector(selectorEl, tagsEl) {
   });
 
   // Close when focus leaves the whole selector (Tab, click elsewhere, etc.)
+  // Use a small delay so that click events on the trigger fire before we close —
+  // this prevents the race where focusout fires (relatedTarget=null) during a
+  // mousedown→focus transition and closes the dropdown before the click reopens it.
   selectorEl.addEventListener('focusout', (e) => {
-    if (!selectorEl.contains(e.relatedTarget)) closeDropdown();
+    // If focus is moving within the selector, do nothing
+    if (selectorEl.contains(e.relatedTarget)) return;
+    // Small defer so trigger's click handler runs first if this was a click
+    setTimeout(() => {
+      if (!selectorEl.contains(document.activeElement)) closeDropdown();
+    }, 0);
   });
 
   return {
@@ -884,22 +959,59 @@ const selectorTo = createAirportSelector(
   document.getElementById('tagsTo')
 );
 
-/* ── IATA routes: determine which airports are selectable ── */
-let iataRoutes = (typeof IATA_ROUTES !== 'undefined' && IATA_ROUTES) ? IATA_ROUTES : null;
-
-function isDirectOnly() {
-  return document.querySelector('.stop-btn.active')?.dataset.value === '0';
+/* ── Wire up Simple Search checkbox (main search form) ── */
+function isMobileDevice() {
+  return window.innerWidth <= 640;
 }
 
-selectorFrom.setGetAllowed(() => true);
+function showSimpleSearchWarning(rowEl) {
+  // Remove any existing warning first
+  rowEl.parentElement.querySelector('.simple-search-warning')?.remove();
+  if (isMobileDevice()) {
+    const warn = document.createElement('p');
+    warn.className = 'simple-search-warning';
+    warn.dataset.i18n = 'simple_search_mobile_warn';
+    warn.textContent = t('simple_search_mobile_warn');
+    rowEl.insertAdjacentElement('afterend', warn);
+  }
+}
 
-selectorTo.setGetAllowed(a => {
-  if (!iataRoutes || !isDirectOnly()) return true;
-  const froms = selectorFrom.getSelected();
-  if (froms.length === 0)
-    return Object.values(iataRoutes).some(dests => dests.includes(a.iata));
-  return froms.some(f => (iataRoutes[f] || []).includes(a.iata));
+function hideSimpleSearchWarning(rowEl) {
+  rowEl.parentElement.querySelector('.simple-search-warning')?.remove();
+}
+
+// Keep warnings in sync when language changes
+onLangChange(() => {
+  document.querySelectorAll('.simple-search-warning').forEach(warn => {
+    warn.textContent = t('simple_search_mobile_warn');
+  });
 });
+
+const simpleSearchCheck = document.getElementById('simpleSearchCheck');
+if (simpleSearchCheck) {
+  simpleSearchCheck.checked = simpleSearchMode;
+  simpleSearchCheck.addEventListener('change', () => {
+    setSimpleSearchMode(simpleSearchCheck.checked);
+    // Sync the express checkbox if present
+    const exChk = document.getElementById('exSimpleSearchCheck');
+    if (exChk) exChk.checked = simpleSearchMode;
+    // Show/hide mobile warning
+    const row = simpleSearchCheck.closest('.simple-search-row');
+    if (!simpleSearchMode) showSimpleSearchWarning(row);
+    else hideSimpleSearchWarning(row);
+    // Sync warning on express form too
+    const exRow = exChk?.closest('.simple-search-row');
+    if (exRow) {
+      if (!simpleSearchMode) showSimpleSearchWarning(exRow);
+      else hideSimpleSearchWarning(exRow);
+    }
+  });
+}
+
+/* ── IATA routes: determine which airports are selectable ── */
+
+selectorFrom.setGetAllowed(() => true);
+selectorTo.setGetAllowed(() => true);
 
 selectorFrom.setOnChange(() => selectorTo.refresh());
 selectorTo.setOnChange(() => selectorFrom.refresh());

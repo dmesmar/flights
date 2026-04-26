@@ -179,14 +179,15 @@ async function refreshSavedFlight(v, btn) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    const card    = btn.closest('.flight-card');
-    const priceEl = card.querySelector('.card-price');
+    const card         = btn.closest('.flight-card');
+    const priceEl      = card.querySelector('.card-price');
+    const priceBlock   = card.querySelector('.card-price-block') || priceEl.parentElement;
 
     let deltaEl = card.querySelector('.price-delta');
     if (!deltaEl) {
       deltaEl = document.createElement('span');
       deltaEl.className = 'price-delta';
-      priceEl.insertAdjacentElement('afterend', deltaEl);
+      priceBlock.appendChild(deltaEl);
     }
 
     if (data.precio != null) {

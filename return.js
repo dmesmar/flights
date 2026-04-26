@@ -113,9 +113,9 @@ function openReturnModal(flight) {
     </div>`;
   document.body.appendChild(modal);
 
-  const rmFrom = createAirportSelector(document.getElementById('rmSelectorFrom'));
+  const rmFrom = createAirportSelector(document.getElementById('rmSelectorFrom'), undefined, { forceSimple: true });
   rmFrom.setSelected([flight.destino]);
-  const rmTo = createAirportSelector(document.getElementById('rmSelectorTo'));
+  const rmTo = createAirportSelector(document.getElementById('rmSelectorTo'), undefined, { forceSimple: true });
   rmTo.setSelected([flight.origen]);
 
   document.getElementById('returnModalClose').addEventListener('click', () => modal.remove());

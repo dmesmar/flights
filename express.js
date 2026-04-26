@@ -31,14 +31,33 @@ const exSelectorTo = createAirportSelector(
   document.getElementById('exTagsTo')
 );
 
+/* ── Wire up Simple Search checkbox (express form) ── */
+const exSimpleSearchCheck = document.getElementById('exSimpleSearchCheck');
+if (exSimpleSearchCheck) {
+  exSimpleSearchCheck.checked = simpleSearchMode;
+  exSimpleSearchCheck.addEventListener('change', () => {
+    setSimpleSearchMode(exSimpleSearchCheck.checked);
+    // Sync main search checkbox and its warning
+    const mainChk = document.getElementById('simpleSearchCheck');
+    if (mainChk) {
+      mainChk.checked = simpleSearchMode;
+      const mainRow = mainChk.closest('.simple-search-row');
+      if (mainRow) {
+        if (!simpleSearchMode) showSimpleSearchWarning(mainRow);
+        else hideSimpleSearchWarning(mainRow);
+      }
+    }
+    // Show/hide warning on this form
+    const exRow = exSimpleSearchCheck.closest('.simple-search-row');
+    if (exRow) {
+      if (!simpleSearchMode) showSimpleSearchWarning(exRow);
+      else hideSimpleSearchWarning(exRow);
+    }
+  });
+}
+
 exSelectorFrom.setGetAllowed(() => true);
-exSelectorTo.setGetAllowed(a => {
-  if (!iataRoutes) return true;
-  const froms = exSelectorFrom.getSelected();
-  if (froms.length === 0)
-    return Object.values(iataRoutes).some(dests => dests.includes(a.iata));
-  return froms.some(f => (iataRoutes[f] || []).includes(a.iata));
-});
+exSelectorTo.setGetAllowed(() => true);
 exSelectorFrom.setOnChange(() => exSelectorTo.refresh());
 
 /* ── Stops selector ── */
