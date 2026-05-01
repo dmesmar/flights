@@ -234,7 +234,7 @@ const I18N = {
     /* ── Price resolution ── */
     price_resolving_status:  'Consultando precio…',
     price_resolving_tip_aria: 'Información sobre el precio',
-    price_resolving_tooltip: 'El precio de este vuelo no estaba disponible en el momento de la búsqueda. Lo estamos consultando ahora en segundo plano; el resultado aparecerá aquí en unos segundos.',
+    price_resolving_tooltip: 'El precio de este vuelo no estaba disponible en el momento de la búsqueda. Lo estamos consultando ahora en segundo plano; el resultado deberá aparecer aquí en unos segundos.',
     price_nd:                'N/D',
     price_nd_hint:           'Sin precio · consulta el enlace ↗',
     price_nd_tooltip:        'No pudimos obtener el precio de este vuelo tras varios intentos. Pulsa el enlace del vuelo para consultarlo directamente en la aerolínea.',
@@ -554,7 +554,7 @@ const I18N = {
     /* ── Price resolution ── */
     price_resolving_status:  'Checking price…',
     price_resolving_tip_aria: 'Price information',
-    price_resolving_tooltip: 'The price for this flight was not available at search time. We are checking it in the background — the result will appear here in a few seconds.',
+    price_resolving_tooltip: 'The price for this flight was not available at search time. We are checking it in the background and the result may appear here in a few seconds.',
     price_nd:                'N/A',
     price_nd_hint:           'No price · check the link ↗',
     price_nd_tooltip:        'We could not retrieve a price for this flight after several attempts. Click the flight link to check it directly on the airline\'s website.',
