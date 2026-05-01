@@ -315,6 +315,7 @@ function loadSearchSnapshot(data) {
   bindSaveBtns(resultsGrid, data.vuelos);
   bindReturnBtns(resultsGrid, data.vuelos);
   bindRouteTabs(resultsGrid, applyFiltersAndSort);
+  startPriceResolution(resultsGrid);
   document.getElementById('returnSection')?.remove();
   resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }

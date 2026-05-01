@@ -293,8 +293,23 @@ function expressCard(v) {
   const id       = flightId(v);
   const savedNow = isSaved(v);
   const isSelected = exSelectedFlight && flightId(exSelectedFlight) === id;
+
+  const needsResolve = v.precio === '–';
+  const resolveAttrs = needsResolve
+    ? ` data-resolve-key="${escapeHtml(id)}" data-resolve-payload="${encodeURIComponent(JSON.stringify({ fecha: v.fecha, origen: v.origen, destino: v.destino, salida: timeOnly(v.salida), aerolinea: v.aerolinea, escalas: v.escalas }))}"`
+    : '';
+  const priceBlock = needsResolve
+    ? `<div class="card-price-block">
+        <span class="card-price price-resolving" data-resolve-price>–</span>
+        <span class="price-resolve-row">
+          <span class="price-resolve-status">${t('price_resolving_status')}</span>
+          <span class="price-resolve-tip-anchor" tabindex="0" aria-label="${t('price_resolving_tip_aria')}">ℹ<span class="price-resolve-tooltip" role="tooltip">${t('price_resolving_tooltip')}</span></span>
+        </span>
+      </div>`
+    : `<span class="card-price">${v.precio}</span>`;
+
   return `
-    <div class="flight-card${isSelected ? ' express-card-selected' : ''}" data-flight-id="${id}">
+    <div class="flight-card${isSelected ? ' express-card-selected' : ''}" data-flight-id="${id}"${resolveAttrs}>
       <div class="card-top">
         <span class="card-date-label">${flightDateLabel(v.fecha)}</span>
         <span class="card-airline-name">${v.aerolinea}</span>
@@ -319,7 +334,7 @@ function expressCard(v) {
         </div>
       </div>
       <div class="card-footer">
-        <span class="card-price">${v.precio}</span>
+        ${priceBlock}
         <div class="card-footer-right">
           ${v.url ? `<a class="book-btn" href="${v.url}" target="_blank" rel="noopener noreferrer" title="${t('book_btn_title')}">${t('book_btn_text')}</a>` : ''}
           <button class="ex-combine-btn${isSelected ? ' ex-combine-selected' : ''}" data-id="${id}"
@@ -464,6 +479,7 @@ function renderExpressGrid(filters) {
   }
 
   grid.innerHTML = html;
+  startPriceResolution(grid);
 
   const allFlights = [...(exRawOut || []), ...(exRawRet || [])];
   grid.querySelectorAll('.save-btn').forEach(btn => {

@@ -201,6 +201,7 @@ function applyFiltersAndSort() {
     bindSaveBtns(resultsGrid, filtered);
     bindReturnBtns(resultsGrid, filtered);
     bindRouteTabs(resultsGrid, applyFiltersAndSort);
+    startPriceResolution(resultsGrid);
   }
 
   const countEl = document.querySelector('.results-count');
@@ -284,6 +285,7 @@ function bindFilterBarEvents() {
     bindSaveBtns(resultsGrid, lastResults.vuelos);
     bindReturnBtns(resultsGrid, lastResults.vuelos);
     bindRouteTabs(resultsGrid, applyFiltersAndSort);
+    startPriceResolution(resultsGrid);
   });
 }
 
@@ -366,6 +368,7 @@ function applyReturnFiltersAndSort(outbound) {
     bindSaveBtns(returnGrid, filtered);
     bindSelectReturnBtns(returnGrid, filtered, outbound);
     bindRouteTabs(returnGrid);
+    startPriceResolution(returnGrid);
   }
   const countEl = document.querySelector('#returnSection .results-count');
   if (countEl) countEl.innerHTML = t('flights_found', filtered.length);
@@ -424,6 +427,7 @@ function bindReturnFilterBarEvents(outbound) {
       bindSaveBtns(returnGrid, lastReturnData.vuelos);
       bindSelectReturnBtns(returnGrid, lastReturnData.vuelos, outbound);
       bindRouteTabs(returnGrid, () => applyReturnFiltersAndSort(outbound));
+      startPriceResolution(returnGrid);
     }
   });
 }

@@ -231,6 +231,14 @@ const I18N = {
     months:   ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
     locale_tag: 'es-ES',
 
+    /* ── Price resolution ── */
+    price_resolving_status:  'Consultando precio…',
+    price_resolving_tip_aria: 'Información sobre el precio',
+    price_resolving_tooltip: 'El precio de este vuelo no estaba disponible en el momento de la búsqueda. Lo estamos consultando ahora en segundo plano; el resultado aparecerá aquí en unos segundos.',
+    price_nd:                'N/D',
+    price_nd_hint:           'Sin precio · consulta el enlace ↗',
+    price_nd_tooltip:        'No pudimos obtener el precio de este vuelo tras varios intentos. Pulsa el enlace del vuelo para consultarlo directamente en la aerolínea.',
+
     /* ── Airport filter checkbox ── */
     label_show_all_airports:         'Ver todos los aeropuertos',
     tooltip_show_all_airports:       'Por defecto solo se muestran aeropuertos relevantes (importancia 3–5). Activa esta opción para ver también aeropuertos pequeños, regionales y privados.',
@@ -542,6 +550,14 @@ const I18N = {
     weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     months:   ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     locale_tag: 'en-GB',
+
+    /* ── Price resolution ── */
+    price_resolving_status:  'Checking price…',
+    price_resolving_tip_aria: 'Price information',
+    price_resolving_tooltip: 'The price for this flight was not available at search time. We are checking it in the background — the result will appear here in a few seconds.',
+    price_nd:                'N/A',
+    price_nd_hint:           'No price · check the link ↗',
+    price_nd_tooltip:        'We could not retrieve a price for this flight after several attempts. Click the flight link to check it directly on the airline\'s website.',
 
     /* ── Airport filter checkbox ── */
     label_show_all_airports:         'Show all airports',

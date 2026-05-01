@@ -237,6 +237,7 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
     bindSaveBtns(returnGrid, data.vuelos);
     bindSelectReturnBtns(returnGrid, data.vuelos, flight);
     bindRouteTabs(returnGrid);
+    startPriceResolution(returnGrid);
   } catch (err) {
     returnSection.innerHTML += renderError(t('conn_error'));
   } finally {

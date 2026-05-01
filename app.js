@@ -1151,6 +1151,87 @@ function apiFetch(url, options = {}) {
   return fetch(url, { ...options, headers });
 }
 
+/* ═══════════════════════════════════════════
+   PRICE RESOLUTION  (precio === "–")
+═══════════════════════════════════════════ */
+const _priceCache   = new Map(); // flightKey → { status, precio }
+const _pricePolling = new Map(); // flightKey → intervalId
+
+function _applyResolvedPrice(card, status, precio) {
+  const priceEl  = card.querySelector('[data-resolve-price]');
+  const rowEl    = card.querySelector('.price-resolve-row');
+  const statusEl = card.querySelector('.price-resolve-status');
+  const tip      = card.querySelector('.price-resolve-tooltip');
+  if (!priceEl) return;
+  if (status === 'found' && precio) {
+    priceEl.textContent = precio;
+    priceEl.classList.remove('price-resolving');
+    priceEl.classList.add('price-resolved');
+    if (rowEl) rowEl.classList.add('price-resolve-done'); // hide row on success
+  } else {
+    // exhausted — keep row visible with error hint
+    priceEl.textContent = t('price_nd');
+    priceEl.classList.remove('price-resolving');
+    priceEl.classList.add('price-nd');
+    if (statusEl) statusEl.textContent = t('price_nd_hint');
+    if (tip)      tip.textContent      = t('price_nd_tooltip');
+  }
+}
+
+function _applyResolvedPriceByKey(key, status, precio) {
+  document.querySelectorAll('[data-resolve-key]').forEach(card => {
+    if (card.dataset.resolveKey === key) {
+      _applyResolvedPrice(card, status, precio);
+    }
+  });
+}
+
+function startPriceResolution(container) {
+  container.querySelectorAll('[data-resolve-key]').forEach(card => {
+    const key = card.dataset.resolveKey;
+
+    // Already cached → apply immediately, no network call
+    const cached = _priceCache.get(key);
+    if (cached) {
+      _applyResolvedPrice(card, cached.status, cached.precio);
+      return;
+    }
+
+    // Already polling → the interval will update the DOM when done
+    if (_pricePolling.has(key)) return;
+
+    let payload;
+    try { payload = JSON.parse(decodeURIComponent(card.dataset.resolvePayload)); } catch { return; }
+
+    apiFetch(`${API_BASE}/api/resolve-price`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    })
+      .then(r => r.json())
+      .then(({ resolve_id }) => {
+        if (!resolve_id) return;
+
+        const intervalId = setInterval(async () => {
+          try {
+            const res = await apiFetch(`${API_BASE}/api/resolve-price/${encodeURIComponent(resolve_id)}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            if (data.status === 'pending') return; // keep polling
+
+            clearInterval(intervalId);
+            _pricePolling.delete(key);
+            _priceCache.set(key, { status: data.status, precio: data.precio });
+            _applyResolvedPriceByKey(key, data.status, data.precio);
+          } catch { /* network hiccup — keep polling */ }
+        }, 4500);
+
+        _pricePolling.set(key, intervalId);
+      })
+      .catch(() => { /* silent — no resolve_id available */ });
+  });
+}
+
 if (IS_LOCAL) {
   document.getElementById('devModeToggle').style.display = '';
 }
@@ -1432,6 +1513,7 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
     bindSaveBtns(resultsGrid, displayData.vuelos);
     bindReturnBtns(resultsGrid, displayData.vuelos);
     bindRouteTabs(resultsGrid, applyFiltersAndSort);
+    startPriceResolution(resultsGrid);
     // Remove any stale return section from previous search
     document.getElementById('returnSection')?.remove();
 
