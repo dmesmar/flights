@@ -126,7 +126,9 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     max_results:  maxResultsEx,
   };
 
-  resultsEl.innerHTML = renderSpinner([...from.flatMap(f => to.map(t2 => `${f} → ${t2}`))]);
+  const controller = new AbortController();
+  resultsEl.innerHTML = renderSpinner([...from.flatMap(f => to.map(t2 => `${f} \u2192 ${t2}`))]);
+  document.getElementById('searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
   await ensureBackendAwake(document.getElementById('progressStatus'));
 
@@ -164,6 +166,7 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     const resOut = await apiFetch(`${API_BASE}/api/search`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadOut),
+      signal: controller.signal,
     });
     if (!resOut.ok) {
       resultsEl.innerHTML = renderError(`Error ${resOut.status}`);
@@ -177,6 +180,7 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     const resRet = await apiFetch(`${API_BASE}/api/search`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadRet),
+      signal: controller.signal,
     });
     if (!resRet.ok) {
       resultsEl.innerHTML = renderError(`Error ${resRet.status}`);
@@ -276,8 +280,12 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     bindExpressFilterEvents(maxSlider);
     bindExpressResultsHeaderBtns(vuelosOut, vuelosRet, elapsedS);
 
-  } catch {
-    resultsEl.innerHTML = renderError(t('conn_error_full'));
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      resultsEl.innerHTML = renderError(t('search_cancelled'));
+    } else {
+      resultsEl.innerHTML = renderError(t('conn_error_full'));
+    }
   } finally {
     clearInterval(progressInterval);
     clearInterval(timerInterval);
@@ -303,7 +311,7 @@ function expressCard(v) {
         <span class="card-price price-resolving" data-resolve-price>–</span>
         <span class="price-resolve-row">
           <span class="price-resolve-status">${t('price_resolving_status')}</span>
-          <span class="price-resolve-tip-anchor" tabindex="0" aria-label="${t('price_resolving_tip_aria')}">ℹ<span class="price-resolve-tooltip" role="tooltip">${t('price_resolving_tooltip')}</span></span>
+          <span class="price-resolve-tip-anchor" tabindex="0" aria-label="${t('price_resolving_tip_aria')}">&#x2139;<span class="price-resolve-tooltip" role="tooltip">${t('price_resolving_tooltip')}</span></span>
         </span>
       </div>`
     : `<span class="card-price">${v.precio}</span>`;

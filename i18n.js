@@ -238,6 +238,8 @@ const I18N = {
     price_nd:                'N/D',
     price_nd_hint:           'Sin precio · consulta el enlace ↗',
     price_nd_tooltip:        'No pudimos obtener el precio de este vuelo tras varios intentos. Pulsa el enlace del vuelo para consultarlo directamente en la aerolínea.',
+    btn_cancel_search:        '✕ Cancelar búsqueda',
+    search_cancelled:        'Búsqueda cancelada',
 
     /* ── Airport filter checkbox ── */
     label_show_all_airports:         'Ver todos los aeropuertos',
@@ -558,6 +560,8 @@ const I18N = {
     price_nd:                'N/A',
     price_nd_hint:           'No price · check the link ↗',
     price_nd_tooltip:        'We could not retrieve a price for this flight after several attempts. Click the flight link to check it directly on the airline\'s website.',
+    btn_cancel_search:        '✕ Cancel search',
+    search_cancelled:        'Search cancelled',
 
     /* ── Airport filter checkbox ── */
     label_show_all_airports:         'Show all airports',

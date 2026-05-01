@@ -264,13 +264,23 @@ function setupDatePresets(containerId, iniId, finId) {
       btn.addEventListener('click', () => {
         const opening = !singlePicker?.classList.contains('open');
         closeAll();
-        if (opening) { singlePicker?.classList.add('open'); btn.classList.add('active'); yearSingleSel?.focus(); }
+        if (opening) {
+          singlePicker?.classList.add('open');
+          btn.classList.add('active');
+          applySinglePicker(); // apply current default values immediately
+          yearSingleSel?.focus();
+        }
       });
     } else if (btn.classList.contains('date-preset-fullmonth')) {
       btn.addEventListener('click', () => {
         const opening = !rangePicker?.classList.contains('open');
         closeAll();
-        if (opening) { rangePicker?.classList.add('open'); btn.classList.add('active'); yearFromSel?.focus(); }
+        if (opening) {
+          rangePicker?.classList.add('open');
+          btn.classList.add('active');
+          applyRangePicker(); // apply current default values immediately
+          yearFromSel?.focus();
+        }
       });
     } else {
       btn.addEventListener('click', () => {
@@ -1154,14 +1164,15 @@ function apiFetch(url, options = {}) {
 /* ═══════════════════════════════════════════
    PRICE RESOLUTION  (precio === "–")
 ═══════════════════════════════════════════ */
-const _priceCache   = new Map(); // flightKey → { status, precio }
-const _pricePolling = new Map(); // flightKey → intervalId
+const _priceCache      = new Map(); // flightKey → { status, precio }
+const _pricePolling    = new Map(); // flightKey → intervalId
+const _priceResolveIds = new Map(); // flightKey → resolve_id
 
 function _applyResolvedPrice(card, status, precio) {
-  const priceEl  = card.querySelector('[data-resolve-price]');
-  const rowEl    = card.querySelector('.price-resolve-row');
-  const statusEl = card.querySelector('.price-resolve-status');
-  const tip      = card.querySelector('.price-resolve-tooltip');
+  const priceEl   = card.querySelector('[data-resolve-price]');
+  const rowEl     = card.querySelector('.price-resolve-row');
+  const statusEl  = card.querySelector('.price-resolve-status');
+  const tip       = card.querySelector('.price-resolve-tooltip');
   if (!priceEl) return;
   if (status === 'found' && precio) {
     priceEl.textContent = precio;
@@ -1173,8 +1184,8 @@ function _applyResolvedPrice(card, status, precio) {
     priceEl.textContent = t('price_nd');
     priceEl.classList.remove('price-resolving');
     priceEl.classList.add('price-nd');
-    if (statusEl) statusEl.textContent = t('price_nd_hint');
-    if (tip)      tip.textContent      = t('price_nd_tooltip');
+    if (statusEl)  statusEl.textContent = t('price_nd_hint');
+    if (tip)       tip.textContent      = t('price_nd_tooltip');
   }
 }
 
@@ -1197,7 +1208,7 @@ function startPriceResolution(container) {
       return;
     }
 
-    // Already polling → the interval will update the DOM when done
+    // Already polling → wait for the interval to update the DOM
     if (_pricePolling.has(key)) return;
 
     let payload;
@@ -1221,12 +1232,14 @@ function startPriceResolution(container) {
 
             clearInterval(intervalId);
             _pricePolling.delete(key);
+            _priceResolveIds.delete(key);
             _priceCache.set(key, { status: data.status, precio: data.precio });
             _applyResolvedPriceByKey(key, data.status, data.precio);
           } catch { /* network hiccup — keep polling */ }
         }, 4500);
 
         _pricePolling.set(key, intervalId);
+        _priceResolveIds.set(key, resolve_id);
       })
       .catch(() => { /* silent — no resolve_id available */ });
   });
@@ -1235,6 +1248,23 @@ function startPriceResolution(container) {
 if (IS_LOCAL) {
   document.getElementById('devModeToggle').style.display = '';
 }
+
+/* ── Cancel pending price-resolve jobs on page unload ── */
+window.addEventListener('pagehide', () => {
+  // Stop all client-side polling intervals
+  _pricePolling.forEach(intervalId => clearInterval(intervalId));
+  _pricePolling.clear();
+
+  // Tell the backend to abort any in-progress scraping sessions
+  const ids = [..._priceResolveIds.values()];
+  if (!ids.length) return;
+  const blob = new Blob(
+    [JSON.stringify({ resolve_ids: ids })],
+    { type: 'application/json' }
+  );
+  navigator.sendBeacon(`${API_BASE}/api/resolve-price/cancel`, blob);
+  _priceResolveIds.clear();
+});
 
 /* ═══════════════════════════════════════════
    TABS
@@ -1444,9 +1474,11 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
 
   // Rutas estimadas para el spinner
   const rutasEstimadas = from.flatMap(f => to.map(t => `${f} → ${t}`));
+  const controller = new AbortController();
   resultsEl.innerHTML  = renderSpinner(rutasEstimadas);
   submitBtn.disabled   = true;
   submitBtn.textContent = t('btn_searching');
+  document.getElementById('searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
   await ensureBackendAwake(document.getElementById('progressStatus'));
 
@@ -1483,6 +1515,7 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
+      signal:  controller.signal,
     });
 
     if (!res.ok) {
@@ -1518,7 +1551,11 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
     document.getElementById('returnSection')?.remove();
 
   } catch (err) {
-    resultsEl.innerHTML = renderError(t('conn_error_full'));
+    if (err.name === 'AbortError') {
+      resultsEl.innerHTML = renderError(t('search_cancelled'));
+    } else {
+      resultsEl.innerHTML = renderError(t('conn_error_full'));
+    }
   } finally {
     clearInterval(progressInterval);
     clearInterval(timerInterval);

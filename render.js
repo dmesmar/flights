@@ -47,6 +47,7 @@ function renderSpinner(rutas) {
       </div>
       <p class="progress-status" id="progressStatus">${t('spinner_init')}</p>
       <p class="spinner-sub">${t('spinner_no_close')}</p>
+      <button type="button" class="search-cancel-btn" id="searchCancelBtn">${t('btn_cancel_search')}</button>
     </div>`;
 }
 
@@ -415,7 +416,7 @@ function renderFlightCard(v, mode) {
         <span class="card-price price-resolving" data-resolve-price>–</span>
         <span class="price-resolve-row">
           <span class="price-resolve-status">${t('price_resolving_status')}</span>
-          <span class="price-resolve-tip-anchor" tabindex="0" aria-label="${t('price_resolving_tip_aria')}">ℹ<span class="price-resolve-tooltip" role="tooltip">${t('price_resolving_tooltip')}</span></span>
+          <span class="price-resolve-tip-anchor" tabindex="0" aria-label="${t('price_resolving_tip_aria')}">&#x2139;<span class="price-resolve-tooltip" role="tooltip">${t('price_resolving_tooltip')}</span></span>
         </span>
       </div>`
     : `<span class="card-price">${v.precio}</span>`;

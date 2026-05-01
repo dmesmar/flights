@@ -185,6 +185,8 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
     ${renderSpinner([`${flight.destino} \u2192 ${flight.origen}`])}`;
   requestAnimationFrame(() => returnSection.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   document.getElementById('returnSectionClose')?.addEventListener('click', () => returnSection.remove());
+  const controller = new AbortController();
+  returnSection.querySelector('#searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
   await ensureBackendAwake(returnSection.querySelector('#progressStatus'));
 
@@ -208,6 +210,7 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(payload),
+      signal:  controller.signal,
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -239,7 +242,11 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
     bindRouteTabs(returnGrid);
     startPriceResolution(returnGrid);
   } catch (err) {
-    returnSection.innerHTML += renderError(t('conn_error'));
+    if (err.name === 'AbortError') {
+      returnSection.innerHTML = renderError(t('search_cancelled'));
+    } else {
+      returnSection.innerHTML += renderError(t('conn_error'));
+    }
   } finally {
     clearInterval(returnProgressInterval);
   }
