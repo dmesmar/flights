@@ -5,7 +5,10 @@
    RENDER HELPERS
 ═══════════════════════════════════════════ */
 function parsePrice(priceStr) {
-  return parseFloat(priceStr.replace(/[^0-9.]/g, '')) || 0;
+  const s = String(priceStr).trim();
+  // Handle European decimal comma ("49,99 €") — swap comma→dot when no dot present
+  const normalized = s.includes(',') && !s.includes('.') ? s.replace(',', '.') : s;
+  return parseFloat(normalized.replace(/[^0-9.]/g, '')) || 0;
 }
 
 function timeOnly(s) {
@@ -180,8 +183,8 @@ function buildFilterBar(data) {
   // Collect distinct airlines and date bounds from raw data
   const airlines  = [...new Set(data.vuelos.map(v => v.aerolinea))].sort();
   const dests     = [...new Set(data.vuelos.map(v => v.destino))].sort().map(iata => ({ iata, city: airportInfo(iata).city }));
-  const prices    = data.vuelos.map(v => parsePrice(v.precio));
-  const maxPrice  = Math.ceil(Math.max(...prices) / 10) * 10;
+  const prices    = data.vuelos.map(v => parsePrice(v.precio)).filter(p => p > 0);
+  const maxPrice  = prices.length ? Math.ceil(Math.max(...prices) / 10) * 10 : 1000;
   const dates     = data.vuelos.map(v => parseDateYMD(v.fecha));
   const minDate   = new Date(Math.min(...dates));
   const maxDate   = new Date(Math.max(...dates));
@@ -299,8 +302,8 @@ function buildFilterBar(data) {
 function buildReturnFilterBar(data) {
   const airlines = [...new Set(data.vuelos.map(v => v.aerolinea))].sort();
   const dests    = [...new Set(data.vuelos.map(v => v.destino))].sort().map(iata => ({ iata, city: airportInfo(iata).city }));
-  const prices   = data.vuelos.map(v => parsePrice(v.precio));
-  const maxPrice = Math.ceil(Math.max(...prices) / 10) * 10;
+  const prices   = data.vuelos.map(v => parsePrice(v.precio)).filter(p => p > 0);
+  const maxPrice = prices.length ? Math.ceil(Math.max(...prices) / 10) * 10 : 1000;
   const dates    = data.vuelos.map(v => parseDateYMD(v.fecha));
   const minDate  = new Date(Math.min(...dates));
   const maxDate  = new Date(Math.max(...dates));
@@ -406,7 +409,10 @@ function renderFlightCard(v, mode) {
   const oriInfo    = airportInfo(v.origen);
   const dstInfo    = airportInfo(v.destino);
 
-  const needsResolve = v.precio === '–';
+  const manualPrice  = (() => { try { return localStorage.getItem('manualPrice_' + id); } catch { return null; } })();
+  // Patch the live data object so filters, saves and totals use the correct price
+  if (manualPrice) v.precio = manualPrice;
+  const needsResolve = !manualPrice && v.precio === '–';
   const resolveAttrs = needsResolve
     ? ` data-resolve-key="${escapeHtml(id)}" data-resolve-payload="${encodeURIComponent(JSON.stringify({ fecha: v.fecha, origen: v.origen, destino: v.destino, salida: timeOnly(v.salida), aerolinea: v.aerolinea, escalas: v.escalas }))}"`
     : '';
@@ -415,11 +421,20 @@ function renderFlightCard(v, mode) {
     ? `<div class="card-price-block">
         <span class="card-price price-resolving" data-resolve-price>–</span>
         <span class="price-resolve-row">
+          <svg class="price-resolve-spinner" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-dashoffset="10" stroke-linecap="round"/></svg>
           <span class="price-resolve-status">${t('price_resolving_status')}</span>
           <span class="price-resolve-tip-anchor" tabindex="0" aria-label="${t('price_resolving_tip_aria')}">&#x2139;<span class="price-resolve-tooltip" role="tooltip">${t('price_resolving_tooltip')}</span></span>
         </span>
       </div>`
-    : `<span class="card-price">${v.precio}</span>`;
+    : manualPrice
+      ? `<div class="card-price-block">
+          <span class="card-price price-manual" data-manual-price title="${t('price_manual_label')}">${escapeHtml(manualPrice)}</span>
+          <span class="price-resolve-row">
+            <span class="price-resolve-status price-manual-hint">✏ ${t('price_manual_label')}</span>
+            <button class="price-manual-edit-btn" data-flight-id="${escapeHtml(id)}" title="${t('price_manual_add')}">✏</button>
+          </span>
+        </div>`
+      : `<span class="card-price">${v.precio}</span>`;
 
   return `
     <div class="flight-card${cheapClass}"${resolveAttrs}>

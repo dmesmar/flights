@@ -1180,12 +1180,23 @@ function _applyResolvedPrice(card, status, precio) {
     priceEl.classList.add('price-resolved');
     if (rowEl) rowEl.classList.add('price-resolve-done'); // hide row on success
   } else {
-    // exhausted — keep row visible with error hint
+    // exhausted — keep row visible with error hint + manual entry button
     priceEl.textContent = t('price_nd');
     priceEl.classList.remove('price-resolving');
     priceEl.classList.add('price-nd');
     if (statusEl)  statusEl.textContent = t('price_nd_hint');
     if (tip)       tip.textContent      = t('price_nd_tooltip');
+    if (rowEl) {
+      const existingBtn = rowEl.querySelector('.price-manual-add-btn');
+      if (!existingBtn) {
+        const manualBtn = document.createElement('button');
+        manualBtn.className = 'price-manual-add-btn';
+        manualBtn.textContent = t('price_manual_add');
+        const fid = card.dataset.resolveKey || '';
+        manualBtn.dataset.flightId = fid;
+        rowEl.appendChild(manualBtn);
+      }
+    }
   }
 }
 
@@ -1195,6 +1206,32 @@ function _applyResolvedPriceByKey(key, status, precio) {
       _applyResolvedPrice(card, status, precio);
     }
   });
+
+  // Also mutate live data so price filters and sorting use the resolved value
+  if (status === 'found' && precio) {
+    [lastResults?.vuelos, lastReturnData?.vuelos].forEach(list => {
+      if (!list) return;
+      const v = list.find(f => flightId(f) === key);
+      if (v) v.precio = precio;
+    });
+
+    // Extend price slider max if the resolved price exceeds the current range
+    const num = parsePrice(precio);
+    ['fPrice', 'rfPrice'].forEach(inputId => {
+      const slider = document.getElementById(inputId);
+      if (!slider) return;
+      const sliderMax = parseFloat(slider.max) || 0;
+      if (num > sliderMax) {
+        const newMax = Math.ceil(num / 10) * 10;
+        if (parseFloat(slider.value) >= sliderMax) {
+          slider.value = newMax;
+          const valEl = document.getElementById(inputId === 'fPrice' ? 'fPriceVal' : 'rfPriceVal');
+          if (valEl) valEl.textContent = `${newMax}€`;
+        }
+        slider.max = newMax;
+      }
+    });
+  }
 }
 
 function startPriceResolution(container) {
@@ -1248,6 +1285,130 @@ function startPriceResolution(container) {
 if (IS_LOCAL) {
   document.getElementById('devModeToggle').style.display = '';
 }
+
+/* ═══════════════════════════════════════════
+   MANUAL PRICE ENTRY
+   Handles .price-manual-add-btn (N/D state)
+   and .price-manual-edit-btn (pre-stored manual price).
+═══════════════════════════════════════════ */
+function _openManualPriceEditor(card, fid) {
+  const priceBlock = card.querySelector('.card-price-block');
+  if (!priceBlock) return;
+  if (priceBlock.querySelector('.price-manual-form')) return; // already open
+
+  const rowEl = priceBlock.querySelector('.price-resolve-row');
+
+  const currentVal = (() => {
+    try { return localStorage.getItem('manualPrice_' + fid) || ''; } catch { return ''; }
+  })();
+
+  // Build inline form
+  const form = document.createElement('div');
+  form.className = 'price-manual-form';
+  form.innerHTML = `
+    <input class="price-manual-input" type="text" inputmode="decimal" value="${escapeHtml(currentVal)}" placeholder="${t('price_manual_placeholder')}" maxlength="10" aria-label="${t('price_manual_label')}" />
+    <button class="price-manual-confirm" title="${t('price_manual_confirm')}">${t('price_manual_confirm')}</button>
+    <button class="price-manual-cancel-btn" title="${t('price_manual_cancel')}">${t('price_manual_cancel')}</button>
+  `;
+
+  priceBlock.appendChild(form);
+  const input = form.querySelector('.price-manual-input');
+  input.focus();
+  input.select();
+
+  // Live sanitization: only digits + one decimal separator (comma or dot)
+  input.addEventListener('input', () => {
+    let val = input.value.replace(/[^0-9.,]/g, '');
+    const sepIdx = val.search(/[.,]/);
+    if (sepIdx !== -1) {
+      val = val.slice(0, sepIdx + 1) + val.slice(sepIdx + 1).replace(/[.,]/g, '');
+    }
+    if (input.value !== val) input.value = val;
+    input.classList.remove('price-manual-input-error');
+  });
+
+  function applyManual() {
+    const raw = input.value.trim();
+    const num = parseFloat(raw.replace(',', '.'));
+    if (!raw || isNaN(num) || num <= 0) {
+      input.classList.add('price-manual-input-error');
+      input.focus();
+      return;
+    }
+    // Format consistently: "49,99 €"
+    const formatted = num.toFixed(2).replace('.', ',') + ' €';
+
+    // Persist
+    try { localStorage.setItem('manualPrice_' + fid, formatted); } catch {}
+
+    // Mutate in live data so filters, saves and price totals work correctly
+    [lastResults?.vuelos, lastReturnData?.vuelos].forEach(list => {
+      if (!list) return;
+      const v = list.find(f => flightId(f) === fid);
+      if (v) v.precio = formatted;
+    });
+
+    // Extend price slider max/value if the new price exceeds the current range
+    ['fPrice', 'rfPrice'].forEach(inputId => {
+      const slider = document.getElementById(inputId);
+      if (!slider) return;
+      const sliderMax = parseFloat(slider.max) || 0;
+      if (num > sliderMax) {
+        const newMax = Math.ceil(num / 10) * 10;
+        // If slider was at its max (user hadn't reduced it), keep it at max
+        if (parseFloat(slider.value) >= sliderMax) {
+          slider.value = newMax;
+          const valEl = document.getElementById(inputId === 'fPrice' ? 'fPriceVal' : 'rfPriceVal');
+          if (valEl) valEl.textContent = `${newMax}€`;
+        }
+        slider.max = newMax;
+      }
+    });
+
+    form.remove();
+
+    // Re-render: main grid gets a full filter pass; return grid updates in-place
+    if (card.closest('#resultsGrid')) {
+      applyFiltersAndSort();
+    } else {
+      // Update the card DOM in-place (save/filter closures already hold the mutated v)
+      const priceEl = priceBlock.querySelector('.card-price, [data-resolve-price], [data-manual-price]');
+      if (priceEl) {
+        priceEl.textContent = formatted;
+        priceEl.classList.remove('price-resolving', 'price-nd');
+        priceEl.classList.add('price-manual');
+        priceEl.removeAttribute('data-resolve-price');
+        priceEl.setAttribute('data-manual-price', '');
+      }
+      if (rowEl) {
+        rowEl.classList.remove('price-resolve-done');
+        rowEl.innerHTML = `<span class="price-resolve-status price-manual-hint">✏ ${t('price_manual_label')}</span><button class="price-manual-edit-btn" data-flight-id="${escapeHtml(fid)}" title="${t('price_manual_add')}">✏</button>`;
+      }
+    }
+  }
+
+  function cancelEdit() {
+    form.remove();
+  }
+
+  form.querySelector('.price-manual-confirm').addEventListener('click', applyManual);
+  form.querySelector('.price-manual-cancel-btn').addEventListener('click', cancelEdit);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') applyManual();
+    if (e.key === 'Escape') cancelEdit();
+  });
+}
+
+document.addEventListener('click', e => {
+  const addBtn  = e.target.closest('.price-manual-add-btn');
+  const editBtn = e.target.closest('.price-manual-edit-btn');
+  const btn = addBtn || editBtn;
+  if (!btn) return;
+  const flightId = btn.dataset.flightId;
+  const card = btn.closest('.flight-card');
+  if (!card || !flightId) return;
+  _openManualPriceEditor(card, flightId);
+});
 
 /* ── Cancel pending price-resolve jobs on page unload ── */
 window.addEventListener('pagehide', () => {

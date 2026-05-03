@@ -1862,6 +1862,86 @@ select:focus {
   animation: none;
 }
 
+/* ── Manual price entry ── */
+.price-manual {
+  color: var(--accent);
+  animation: none;
+}
+
+.price-manual-hint {
+  font-style: italic;
+}
+
+.price-manual-add-btn,
+.price-manual-edit-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+  line-height: 1.2;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.price-manual-add-btn:hover,
+.price-manual-edit-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.price-manual-form {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.price-manual-input {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text);
+  width: 7rem;
+  outline: none;
+}
+
+.price-manual-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.price-manual-input.price-manual-input-error {
+  border-color: #f87171;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f87171 30%, transparent);
+}
+
+.price-manual-confirm,
+.price-manual-cancel-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.price-manual-confirm:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.price-manual-cancel-btn:hover {
+  border-color: #f87171;
+  color: #f87171;
+}
+
 .price-resolve-row {
   display: flex;
   align-items: center;
@@ -1873,6 +1953,18 @@ select:focus {
 
 .price-resolve-status {
   white-space: nowrap;
+}
+
+.price-resolve-spinner {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex-shrink: 0;
+  animation: price-resolve-spin 0.9s linear infinite;
+  color: var(--text-muted);
+}
+
+@keyframes price-resolve-spin {
+  to { transform: rotate(360deg); }
 }
 
 .price-resolve-row.price-resolve-done {

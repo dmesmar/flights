@@ -238,6 +238,11 @@ const I18N = {
     price_nd:                'N/D',
     price_nd_hint:           'Sin precio · consulta el enlace ↗',
     price_nd_tooltip:        'No pudimos obtener el precio de este vuelo tras varios intentos. Pulsa el enlace del vuelo para consultarlo directamente en la aerolínea.',
+    price_manual_add:         '✏ Añadir manualmente',
+    price_manual_placeholder: 'Ej. 49,99 €',
+    price_manual_confirm:     '✓',
+    price_manual_cancel:      '✕',
+    price_manual_label:       'Precio manual',
     btn_cancel_search:        '✕ Cancelar búsqueda',
     search_cancelled:        'Búsqueda cancelada',
 
@@ -560,6 +565,11 @@ const I18N = {
     price_nd:                'N/A',
     price_nd_hint:           'No price · check the link ↗',
     price_nd_tooltip:        'We could not retrieve a price for this flight after several attempts. Click the flight link to check it directly on the airline\'s website.',
+    price_manual_add:         '✏ Add manually',
+    price_manual_placeholder: 'E.g. 49.99 €',
+    price_manual_confirm:     '✓',
+    price_manual_cancel:      '✕',
+    price_manual_label:       'Manual price',
     btn_cancel_search:        '✕ Cancel search',
     search_cancelled:        'Search cancelled',
 
