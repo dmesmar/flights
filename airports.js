@@ -4078,13 +4078,13 @@ const AIRPORTS = [
   {"iata": "WOE", "name": "Woensdrecht Air Base", "city": "Bergen Op Zoom", "country": "NL", "importance": 1},
   {"iata": "GLZ", "name": "Gilze Rijen Air Base", "city": "Breda", "country": "NL", "importance": 1},
   {"iata": "DHR", "name": "De Kooy Airport", "city": "Den Helder", "country": "NL", "importance": 2},
-  {"iata": "EIN", "name": "Eindhoven Airport", "city": "Eindhoven", "country": "NL", "importance": 2},
+  {"iata": "EIN", "name": "Eindhoven Airport", "city": "Eindhoven", "country": "NL", "importance": 4},
   {"iata": "ENS", "name": "Twenthe Airport", "city": "Enschede", "country": "NL", "importance": 2},
   {"iata": "GRQ", "name": "Eelde Airport", "city": "Groningen", "country": "NL", "importance": 2},
   {"iata": "LWR", "name": "Leeuwarden Air Base", "city": "Leeuwarden", "country": "NL", "importance": 1},
   {"iata": "LEY", "name": "Lelystad Airport", "city": "Lelystad", "country": "NL", "importance": 2},
-  {"iata": "MST", "name": "Maastricht Aachen Airport", "city": "Maastricht", "country": "NL", "importance": 2},
-  {"iata": "RTM", "name": "Rotterdam Airport", "city": "Rotterdam", "country": "NL", "importance": 2},
+  {"iata": "MST", "name": "Maastricht Aachen Airport", "city": "Maastricht", "country": "NL", "importance": 3},
+  {"iata": "RTM", "name": "Rotterdam Airport", "city": "Rotterdam", "country": "NL", "importance": 4},
   {"iata": "UDE", "name": "Volkel Air Base", "city": "Uden", "country": "NL", "importance": 1},
 
   // -- NO --
