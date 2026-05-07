@@ -1350,6 +1350,16 @@ select:focus {
   flex: 1;
   min-width: 0;
 }
+.filter-group-pills--compact {
+  flex: 0 0 auto;
+}
+.filter-group-pills--compact .filter-stops-row {
+  width: fit-content;
+}
+.filter-group-pills--compact .filter-stop-btn {
+  flex: 0 0 auto;
+  padding: 0.35rem 1rem;
+}
 
 .filter-stop-btn {
   flex: 1;
@@ -3194,3 +3204,231 @@ select:focus {
   border-radius: 1px;
   box-shadow: -2px 0 0 currentColor, 2px 0 0 currentColor;
 }
+
+/* ════════════════════════════════════════════
+   BARATOS (CHEAP DEALS) TAB
+════════════════════════════════════════════ */
+
+/* ── Results header (count + elapsed + collapse-all) ── */
+.cheap-results-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.6rem;
+  flex-wrap: wrap;
+}
+.cheap-results-count {
+  font-weight: 700;
+  color: var(--text);
+}
+.cheap-results-count strong {
+  color: var(--accent);
+}
+.cheap-elapsed {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+/* ── Destination card shell ── */
+.cheap-dest-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 1.1rem;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+.cheap-dest-card:hover {
+  box-shadow: 0 4px 18px rgba(80,40,10,0.13), 0 10px 36px rgba(80,40,10,0.08);
+}
+
+/* ── Clickable header row ── */
+.cheap-dest-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+  border-bottom: 1px solid transparent;
+}
+.cheap-dest-header:hover {
+  background: var(--surface-2);
+}
+
+/* ── Left: IATA + city + country ── */
+.cheap-dest-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.cheap-dest-iata {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.03em;
+}
+.cheap-dest-sep {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+.cheap-dest-city {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 22ch;
+}
+.cheap-dest-country {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── Middle: price + count pill + more badge ── */
+.cheap-dest-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.cheap-min-price {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.cheap-min-price strong {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.cheap-count-pill {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 0.15em 0.65em;
+  white-space: nowrap;
+}
+.cheap-more-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--tag-bg);
+  border: 1px solid var(--tag-border);
+  border-radius: 50px;
+  padding: 0.15em 0.65em;
+  white-space: nowrap;
+}
+
+/* ── Right: route button + chevron ── */
+.cheap-dest-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.cheap-route-btn {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-btn);
+  padding: 0.28em 0.8em;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.cheap-route-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+.cheap-chevron {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+  min-width: 1em;
+  text-align: center;
+}
+
+/* ── Origin section (by-origin mode) ── */
+.cheap-origin-section {
+  margin-bottom: 1.8rem;
+}
+.cheap-origin-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.2rem 0.65rem 0;
+  border-bottom: 2px solid var(--accent);
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+}
+.cheap-origin-iata {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+.cheap-origin-sep {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+.cheap-origin-city {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+}
+.cheap-origin-count {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ── Flights grid inside a destination card ── */
+.cheap-flights {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 0.9rem;
+  padding: 0.9rem 1.1rem 1.1rem;
+  border-top: 1px solid var(--border);
+}
+.cheap-flights.cheap-collapsed {
+  display: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 680px) {
+  .cheap-dest-header {
+    flex-wrap: wrap;
+  }
+  .cheap-dest-info {
+    width: 100%;
+  }
+  .cheap-dest-meta {
+    flex-wrap: wrap;
+  }
+  .cheap-flights {
+    grid-template-columns: 1fr;
+    padding: 0.7rem 0.7rem 0.9rem;
+  }
+  .cheap-dest-iata {
+    font-size: 1.1rem;
+  }
+  .cheap-route-btn {
+    font-size: 0.72rem;
+    padding: 0.22em 0.6em;
+  }
+}
+

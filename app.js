@@ -1116,6 +1116,15 @@ function applyShowAllAirports(val) {
     exSelectorFrom.refresh?.();
     exSelectorTo.refresh?.();
   }
+  // Sync cheap selectors if present
+  if (typeof chSelectorFrom !== 'undefined') {
+    chSelectorFrom.setGetAllowed(isAirportAllowed);
+    chSelectorTo.setGetAllowed(isAirportAllowed);
+    chSelectorFrom.clearDisallowed();
+    chSelectorTo.clearDisallowed();
+    chSelectorFrom.refresh?.();
+    chSelectorTo.refresh?.();
+  }
 }
 
 const showAllAirportsCheck = document.getElementById('showAllAirportsCheck');
@@ -1214,6 +1223,15 @@ function _applyResolvedPriceByKey(key, status, precio) {
       const v = list.find(f => flightId(f) === key);
       if (v) v.precio = precio;
     });
+
+    // Also mutate chRawData (cheap tab) and refresh its destination header
+    if (typeof chRawData !== 'undefined' && chRawData?.vuelos) {
+      const cv = chRawData.vuelos.find(f => flightId(f) === key);
+      if (cv) {
+        cv.precio = precio;
+        if (typeof _updateCheapDestHeader === 'function') _updateCheapDestHeader(cv.destino, cv.origen);
+      }
+    }
 
     // Extend price slider max if the resolved price exceeds the current range
     const num = parsePrice(precio);

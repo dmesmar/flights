@@ -82,8 +82,8 @@ const AIRPORTS = [
   {"iata": "XGN", "name": "Xangongo Airport", "city": "Xangongo", "country": "AO", "importance": 2},
 
   // -- AQ --
-  {"iata": "UGL", "name": "Union Glacier Blue-Ice Runway", "city": "Antartica", "country": "AQ", "importance": 2},
-  {"iata": "TNM", "name": "Teniente Rodolfo Marsh Martin Base", "city": "Isla Rey Jorge", "country": "AQ", "importance": 2},
+  {"iata": "UGL", "name": "Union Glacier Blue-Ice Runway", "city": "Antartica", "country": "AQ", "importance": 3},
+  {"iata": "TNM", "name": "Teniente Rodolfo Marsh Martin Base", "city": "Isla Rey Jorge", "country": "AQ", "importance": 3},
 
   // -- AR --
   {"iata": "ARR", "name": "D. Casimiro Szlapelis Airport", "city": "Alto Rio Senguerr", "country": "AR", "importance": 2},
@@ -445,8 +445,8 @@ const AIRPORTS = [
   {"iata": "KRE", "name": "Kirundo Airport", "city": "Kirundo", "country": "BI", "importance": 2},
 
   // -- BJ --
-  {"iata": "COO", "name": "Cadjehoun Airport", "city": "Cotonou", "country": "BJ", "importance": 2},
-  {"iata": "DJA", "name": "Djougou Airport", "city": "Djougou", "country": "BJ", "importance": 2},
+  {"iata": "COO", "name": "Cadjehoun Airport", "city": "Cotonou", "country": "BJ", "importance": 3},
+  {"iata": "DJA", "name": "Djougou Airport", "city": "Djougou", "country": "BJ", "importance": 3},
   {"iata": "KDC", "name": "Kandi Airport", "city": "Kandi", "country": "BJ", "importance": 2},
   {"iata": "NAE", "name": "Natitingou Airport", "city": "Natitingou", "country": "BJ", "importance": 2},
   {"iata": "PKO", "name": "Parakou Airport", "city": "Parakou", "country": "BJ", "importance": 2},
@@ -869,8 +869,8 @@ const AIRPORTS = [
   {"iata": "WTD", "name": "West End Airport", "city": "West End", "country": "BS", "importance": 2},
 
   // -- BT --
-  {"iata": "GLU", "name": "Gelephu Airport", "city": "Gelephu", "country": "BT", "importance": 2},
-  {"iata": "BUT", "name": "Bathbalathang Domestic Airport", "city": "Jakar", "country": "BT", "importance": 2},
+  {"iata": "GLU", "name": "Gelephu Airport", "city": "Gelephu", "country": "BT", "importance": 3},
+  {"iata": "BUT", "name": "Bathbalathang Domestic Airport", "city": "Jakar", "country": "BT", "importance": 3},
   {"iata": "PBH", "name": "Paro Airport", "city": "Paro", "country": "BT", "importance": 2},
 
   // -- BW --
@@ -1394,8 +1394,8 @@ const AIRPORTS = [
   {"iata": "IMO", "name": "Zemio Airport", "city": "Zemio", "country": "CF", "importance": 2},
 
   // -- CG --
-  {"iata": "BTB", "name": "Betou Airport", "city": "Betou", "country": "CG", "importance": 2},
-  {"iata": "BOE", "name": "Boundji Airport", "city": "Boundji", "country": "CG", "importance": 2},
+  {"iata": "BTB", "name": "Betou Airport", "city": "Betou", "country": "CG", "importance": 3},
+  {"iata": "BOE", "name": "Boundji Airport", "city": "Boundji", "country": "CG", "importance": 3},
   {"iata": "BZV", "name": "Maya-Maya Airport", "city": "Brazzaville", "country": "CG", "importance": 2},
   {"iata": "DJM", "name": "Djambala Airport", "city": "Djambala", "country": "CG", "importance": 2},
   {"iata": "DIS", "name": "Ngot Nzoungou Airport", "city": "Dolisie", "country": "CG", "importance": 2},
@@ -2066,8 +2066,8 @@ const AIRPORTS = [
   {"iata": "OHR", "name": "Wyk auf Fohr Airport", "city": "Wyk auf Fohr", "country": "DE", "importance": 2},
 
   // -- DJ --
-  {"iata": "AII", "name": "Ali-Sabieh Airport", "city": "Ali-Sabieh", "country": "DJ", "importance": 2},
-  {"iata": "JIB", "name": "Djibouti-Ambouli Airport", "city": "Djibouti City", "country": "DJ", "importance": 2},
+  {"iata": "AII", "name": "Ali-Sabieh Airport", "city": "Ali-Sabieh", "country": "DJ", "importance": 3},
+  {"iata": "JIB", "name": "Djibouti-Ambouli Airport", "city": "Djibouti City", "country": "DJ", "importance": 3},
   {"iata": "MHI", "name": "Moucha Airport", "city": "Moucha Island", "country": "DJ", "importance": 2},
   {"iata": "OBC", "name": "Obock Airport", "city": "Obock", "country": "DJ", "importance": 2},
   {"iata": "TDJ", "name": "Tadjoura Airport", "city": "Tadjoura", "country": "DJ", "importance": 2},
@@ -2092,8 +2092,8 @@ const AIRPORTS = [
   {"iata": "SKS", "name": "Vojens Skrydstrup Airport", "city": "Vojens", "country": "DK", "importance": 2},
 
   // -- DM --
-  {"iata": "DCF", "name": "Canefield Airport", "city": "Canefield", "country": "DM", "importance": 2},
-  {"iata": "DOM", "name": "Melville Hall Airport", "city": "Marigot", "country": "DM", "importance": 2},
+  {"iata": "DCF", "name": "Canefield Airport", "city": "Canefield", "country": "DM", "importance": 3},
+  {"iata": "DOM", "name": "Melville Hall Airport", "city": "Marigot", "country": "DM", "importance": 3},
 
   // -- DO --
   {"iata": "EPS", "name": "Arroyo Barril Airport", "city": "Arroyo Barril", "country": "DO", "importance": 2},
@@ -2199,8 +2199,8 @@ const AIRPORTS = [
   {"iata": "TCP", "name": "Taba International Airport", "city": "Taba", "country": "EG", "importance": 3},
 
   // -- EH --
-  {"iata": "VIL", "name": "Dakhla Airport", "city": "Dakhla", "country": "EH", "importance": 2},
-  {"iata": "EUN", "name": "Hassan I Airport", "city": "El Aaiun", "country": "EH", "importance": 2},
+  {"iata": "VIL", "name": "Dakhla Airport", "city": "Dakhla", "country": "EH", "importance": 3},
+  {"iata": "EUN", "name": "Hassan I Airport", "city": "El Aaiun", "country": "EH", "importance": 3},
   {"iata": "SMW", "name": "Smara Airport", "city": "Smara", "country": "EH", "importance": 2},
 
   // -- ER --
@@ -2348,8 +2348,8 @@ const AIRPORTS = [
   {"iata": "YAS", "name": "Yasawa Island Airport", "city": "Yasawa Island", "country": "FJ", "importance": 2},
 
   // -- FK --
-  {"iata": "MPN", "name": "Mount Pleasant Airport", "city": "Mount Pleasant", "country": "FK", "importance": 2},
-  {"iata": "PSY", "name": "Stanley Airport", "city": "Stanley", "country": "FK", "importance": 2},
+  {"iata": "MPN", "name": "Mount Pleasant Airport", "city": "Mount Pleasant", "country": "FK", "importance": 3},
+  {"iata": "PSY", "name": "Stanley Airport", "city": "Stanley", "country": "FK", "importance": 3},
 
   // -- FM --
   {"iata": "KSA", "name": "Kosrae Airport", "city": "Kosrae", "country": "FM", "importance": 2},
@@ -2673,8 +2673,8 @@ const AIRPORTS = [
   {"iata": "BJL", "name": "Banjul International Airport", "city": "Banjul", "country": "GM", "importance": 3},
 
   // -- GN --
-  {"iata": "BKJ", "name": "Boke Airport", "city": "Boke", "country": "GN", "importance": 2},
-  {"iata": "CKY", "name": "Conakry Airport", "city": "Conakry", "country": "GN", "importance": 2},
+  {"iata": "BKJ", "name": "Boke Airport", "city": "Boke", "country": "GN", "importance": 3},
+  {"iata": "CKY", "name": "Conakry Airport", "city": "Conakry", "country": "GN", "importance": 3},
   {"iata": "KNN", "name": "Kankan Airport", "city": "Kankan", "country": "GN", "importance": 2},
   {"iata": "KSI", "name": "Kissidougou Airport", "city": "Kissidougou", "country": "GN", "importance": 2},
   {"iata": "SBI", "name": "Sambailo Airport", "city": "Koundara", "country": "GN", "importance": 2},
@@ -2691,7 +2691,7 @@ const AIRPORTS = [
   {"iata": "SFC", "name": "St-Francois Airport", "city": "St-Francois", "country": "GP", "importance": 3},
 
   // -- GQ --
-  {"iata": "SSG", "name": "Malabo Airport", "city": "Malabo", "country": "GQ", "importance": 2},
+  {"iata": "SSG", "name": "Malabo Airport", "city": "Malabo", "country": "GQ", "importance": 3},
 
   // -- GR --
   {"iata": "AGQ", "name": "Agrinion Airport", "city": "Agrinion", "country": "GR", "importance": 2},
@@ -3968,8 +3968,8 @@ const AIRPORTS = [
   {"iata": "TMG", "name": "Tomanggong Airport", "city": "Tomanggong", "country": "MY", "importance": 2},
 
   // -- MZ --
-  {"iata": "ANO", "name": "Angoche Airport", "city": "Angoche", "country": "MZ", "importance": 2},
-  {"iata": "BEW", "name": "Beira Airport", "city": "Beira", "country": "MZ", "importance": 2},
+  {"iata": "ANO", "name": "Angoche Airport", "city": "Angoche", "country": "MZ", "importance": 3},
+  {"iata": "BEW", "name": "Beira Airport", "city": "Beira", "country": "MZ", "importance": 3},
   {"iata": "VPY", "name": "Chimoio Airport", "city": "Chimoio", "country": "MZ", "importance": 2},
   {"iata": "FXO", "name": "Cuamba Airport", "city": "Cuamba", "country": "MZ", "importance": 2},
   {"iata": "IHC", "name": "Inhaca Airport", "city": "Inhaca", "country": "MZ", "importance": 2},
@@ -4927,12 +4927,12 @@ const AIRPORTS = [
   {"iata": "HLE", "name": "Saint Helena Airport", "city": "Saint Helena", "country": "SH", "importance": 3},
 
   // -- SI --
-  {"iata": "LJU", "name": "Ljubljana Joze Pucnik Airport", "city": "Ljubljana", "country": "SI", "importance": 2},
-  {"iata": "POW", "name": "Portoroz Airport", "city": "Portoroz", "country": "SI", "importance": 2},
+  {"iata": "LJU", "name": "Ljubljana Joze Pucnik Airport", "city": "Ljubljana", "country": "SI", "importance": 3},
+  {"iata": "POW", "name": "Portoroz Airport", "city": "Portoroz", "country": "SI", "importance": 3},
 
   // -- SK --
-  {"iata": "BTS", "name": "M. R. Stefanik Airport", "city": "Bratislava", "country": "SK", "importance": 2},
-  {"iata": "KSC", "name": "Kosice Airport", "city": "Kosice", "country": "SK", "importance": 2},
+  {"iata": "BTS", "name": "M. R. Stefanik Airport", "city": "Bratislava", "country": "SK", "importance": 3},
+  {"iata": "KSC", "name": "Kosice Airport", "city": "Kosice", "country": "SK", "importance": 3},
   {"iata": "LUE", "name": "Lucenec Airport", "city": "Lucenec", "country": "SK", "importance": 2},
   {"iata": "PZY", "name": "Piestany Airport", "city": "Piestany", "country": "SK", "importance": 2},
   {"iata": "TAT", "name": "Poprad-Tatry Airport", "city": "Poprad", "country": "SK", "importance": 2},
@@ -5003,8 +5003,8 @@ const AIRPORTS = [
   {"iata": "PBM", "name": "Johan Adolf Pengel International Airport", "city": "Zandery", "country": "SR", "importance": 4},
 
   // -- SS --
-  {"iata": "JUB", "name": "Juba Airport", "city": "Juba", "country": "SS", "importance": 2},
-  {"iata": "MAK", "name": "Malakal Airport", "city": "Malakal", "country": "SS", "importance": 2},
+  {"iata": "JUB", "name": "Juba Airport", "city": "Juba", "country": "SS", "importance": 3},
+  {"iata": "MAK", "name": "Malakal Airport", "city": "Malakal", "country": "SS", "importance": 3},
   {"iata": "RBX", "name": "Rumbek Airport", "city": "Rumbek", "country": "SS", "importance": 2},
   {"iata": "WUU", "name": "Wau Airport", "city": "Wau", "country": "SS", "importance": 2},
 
@@ -5026,8 +5026,8 @@ const AIRPORTS = [
   {"iata": "LTK", "name": "Bassel Al-Assad International Airport", "city": "Latakia", "country": "SY", "importance": 3},
 
   // -- SZ --
-  {"iata": "MTS", "name": "Matsapha Airport", "city": "Manzini", "country": "SZ", "importance": 2},
-  {"iata": "SHO", "name": "King Mswati III Intl", "city": "Manzini", "country": "SZ", "importance": 2},
+  {"iata": "MTS", "name": "Matsapha Airport", "city": "Manzini", "country": "SZ", "importance": 3},
+  {"iata": "SHO", "name": "King Mswati III Intl", "city": "Manzini", "country": "SZ", "importance": 3},
 
   // -- TC --
   {"iata": "GDT", "name": "JAGS McCartney International Airport", "city": "Cockburn Town", "country": "TC", "importance": 3},
@@ -5292,8 +5292,8 @@ const AIRPORTS = [
   {"iata": "TRY", "name": "Tororo Airport", "city": "Tororo", "country": "UG", "importance": 2},
 
   // -- UM --
-  {"iata": "MDY", "name": "Henderson Field", "city": "Midway Atoll", "country": "UM", "importance": 2},
-  {"iata": "AWK", "name": "Wake Island Airfield", "city": "Wake Island", "country": "UM", "importance": 2},
+  {"iata": "MDY", "name": "Henderson Field", "city": "Midway Atoll", "country": "UM", "importance": 3},
+  {"iata": "AWK", "name": "Wake Island Airfield", "city": "Wake Island", "country": "UM", "importance": 3},
 
   // -- US --
   {"iata": "ABR", "name": "Aberdeen Regional Airport", "city": "Aberdeen", "country": "US", "importance": 2},
