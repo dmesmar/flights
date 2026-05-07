@@ -188,36 +188,8 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
   const controller = new AbortController();
   returnSection.querySelector('#searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
-  await ensureBackendAwake(returnSection.querySelector('#progressStatus'));
-
-  // Poll /api/progress while return search runs
-  const returnProgressInterval = setInterval(async () => {
-    try {
-      const r = await apiFetch(`${API_BASE}/api/progress?search_id=${searchId}`);
-      if (!r.ok) return;
-      const { percent, message } = await r.json();
-      const fill   = returnSection.querySelector('#progressFill');
-      const pct    = returnSection.querySelector('#progressPct');
-      const status = returnSection.querySelector('#progressStatus');
-      if (fill)   fill.style.width   = `${Math.min(Math.max(percent, 0), 100)}%`;
-      if (pct)    pct.textContent    = `${Math.round(percent)}%`;
-      if (status && message) status.textContent = message;
-    } catch { /* ignore */ }
-  }, 600);
-
   try {
-    const res = await apiFetch(`${API_BASE}/api/search`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
-      signal:  controller.signal,
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      returnSection.innerHTML += renderError(err.detail || `Error ${res.status}`);
-      return;
-    }
-    const data = await res.json();
+    const { data } = await executeSearch(payload, returnSection, controller);
     lastReturnData = data;
     const header = `
       <div class="results-header">
@@ -245,9 +217,7 @@ async function searchReturn(flight, minDays, maxDays, fromAirports, toAirports) 
     if (err.name === 'AbortError') {
       returnSection.innerHTML = renderError(t('search_cancelled'));
     } else {
-      returnSection.innerHTML += renderError(t('conn_error'));
+      returnSection.innerHTML += renderError(err.isApiError ? err.message : t('conn_error'));
     }
-  } finally {
-    clearInterval(returnProgressInterval);
   }
 }

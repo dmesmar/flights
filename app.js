@@ -1597,6 +1597,83 @@ async function ensureBackendAwake(statusEl) {
   }
 }
 
+/* ═══════════════════════════════════════════
+   SEARCH EXECUTOR — base compartida
+   Gestiona: wakeup del backend, polling de
+   progreso, timer opcional, POST /api/search.
+   Lanza Error con .isApiError=true para
+   errores de API, o AbortError al cancelar.
+═══════════════════════════════════════════ */
+/**
+ * @param {Object}   payload            - cuerpo del POST a /api/search (debe incluir search_id)
+ * @param {Element}  container          - elemento que contiene el spinner (se usa querySelector)
+ * @param {AbortController} controller  - para cancelación
+ * @param {Object}   [opts]
+ * @param {boolean}  [opts.showTimer]         - actualiza #spinnerTimer cada segundo (default: false)
+ * @param {boolean}  [opts.showEta]           - muestra ETA en #spinnerEta (default: false)
+ * @param {function} [opts.progressTransform] - mapea 0–100 % raw a % a mostrar (default: identidad)
+ * @returns {Promise<{data: Object, elapsedMs: number}>}
+ */
+async function executeSearch(payload, container, controller, {
+  showTimer         = false,
+  showEta           = false,
+  progressTransform = pct => pct,
+} = {}) {
+  await ensureBackendAwake(container.querySelector('#progressStatus'));
+
+  const searchStart = Date.now();
+  let timerInterval = null;
+  if (showTimer) {
+    timerInterval = setInterval(() => {
+      const el = container.querySelector('#spinnerTimer');
+      if (el) el.textContent = Math.floor((Date.now() - searchStart) / 1000) + ' s';
+    }, 1000);
+  }
+
+  const progressInterval = setInterval(async () => {
+    try {
+      const r = await apiFetch(`${API_BASE}/api/progress?search_id=${payload.search_id}`);
+      if (!r.ok) return;
+      const { percent, message } = await r.json();
+      const displayed = progressTransform(percent);
+      const fill   = container.querySelector('#progressFill');
+      const pct    = container.querySelector('#progressPct');
+      const status = container.querySelector('#progressStatus');
+      const eta    = container.querySelector('#spinnerEta');
+      if (fill)   fill.style.width   = `${Math.min(Math.max(displayed, 0), 100)}%`;
+      if (pct)    pct.textContent    = `${Math.round(displayed)}%`;
+      if (status && message) status.textContent = message;
+      if (showEta && eta && displayed > 5) {
+        const elapsed   = (Date.now() - searchStart) / 1000;
+        const remaining = Math.round(elapsed / displayed * (100 - displayed));
+        eta.textContent = t('spinner_remaining', remaining);
+      }
+    } catch { /* backend no listo aún */ }
+  }, 600);
+
+  try {
+    const res = await apiFetch(`${API_BASE}/api/search`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+      signal:  controller.signal,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const apiErr = new Error(err.detail || `Error ${res.status}`);
+      apiErr.isApiError = true;
+      throw apiErr;
+    }
+
+    const data = await res.json();
+    return { data, elapsedMs: Date.now() - searchStart };
+  } finally {
+    clearInterval(progressInterval);
+    if (timerInterval !== null) clearInterval(timerInterval);
+  }
+}
+
 document.getElementById('searchForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -1641,54 +1718,12 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
   submitBtn.textContent = t('btn_searching');
   document.getElementById('searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
-  await ensureBackendAwake(document.getElementById('progressStatus'));
-
-  // Elapsed time timer
-  const searchStart = Date.now();
-  const timerInterval = setInterval(() => {
-    const el = document.getElementById('spinnerTimer');
-    if (el) el.textContent = Math.floor((Date.now() - searchStart) / 1000) + ' s';
-  }, 1000);
-
-  // Poll /api/progress while search runs
-  const progressInterval = setInterval(async () => {
-    try {
-      const r = await apiFetch(`${API_BASE}/api/progress?search_id=${searchId}`);
-      if (!r.ok) return;
-      const { percent, message } = await r.json();
-      const fill   = document.getElementById('progressFill');
-      const pct    = document.getElementById('progressPct');
-      const status = document.getElementById('progressStatus');
-      const eta    = document.getElementById('spinnerEta');
-      if (fill)   fill.style.width   = `${Math.min(Math.max(percent, 0), 100)}%`;
-      if (pct)    pct.textContent    = `${Math.round(percent)}%`;
-      if (status && message) status.textContent = message;
-      if (eta && percent > 5) {
-        const elapsed = (Date.now() - searchStart) / 1000;
-        const remaining = Math.round(elapsed / percent * (100 - percent));
-        eta.textContent = t('spinner_remaining', remaining);
-      }
-    } catch { /* backend not ready yet */ }
-  }, 600);
-
   try {
-    const res = await apiFetch(`${API_BASE}/api/search`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
-      signal:  controller.signal,
+    const { data, elapsedMs } = await executeSearch(payload, resultsEl, controller, {
+      showTimer: true,
+      showEta:   true,
     });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const msg = err.detail || `Error ${res.status}`;
-      resultsEl.innerHTML = renderError(msg);
-      return;
-    }
-
-    const data = await res.json();
     lastResults = data;
-    const elapsedMs = Date.now() - searchStart;
 
     // Capture selected days and pre-filter display data
     activeDayFilter = [...document.querySelectorAll('#dayBtnsRow .day-btn.active')].map(b => parseInt(b.dataset.day));
@@ -1715,11 +1750,9 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
     if (err.name === 'AbortError') {
       resultsEl.innerHTML = renderError(t('search_cancelled'));
     } else {
-      resultsEl.innerHTML = renderError(t('conn_error_full'));
+      resultsEl.innerHTML = renderError(err.isApiError ? err.message : t('conn_error_full'));
     }
   } finally {
-    clearInterval(progressInterval);
-    clearInterval(timerInterval);
     submitBtn.disabled   = false;
     submitBtn.textContent = t('btn_search');
   }

@@ -130,63 +130,24 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
   resultsEl.innerHTML = renderSpinner([...from.flatMap(f => to.map(t2 => `${f} \u2192 ${t2}`))]);
   document.getElementById('searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
-  await ensureBackendAwake(document.getElementById('progressStatus'));
-
-  // Timer display
+  // Timer (abarca las dos búsquedas — se gestiona aquí para reflejar el tiempo total)
   const timerInterval = setInterval(() => {
-    const el = document.getElementById('spinnerTimer');
+    const el = resultsEl.querySelector('#spinnerTimer');
     if (el) el.textContent = Math.floor((Date.now() - searchStart) / 1000) + ' s';
   }, 1000);
 
-  // Progress polling — two sequential searches, show combined progress
-  let searchPhase = 0; // 0 = outbound, 1 = return
-  const progressInterval = setInterval(async () => {
-    try {
-      const r = await apiFetch(`${API_BASE}/api/progress?search_id=${searchPhase === 0 ? searchIdOut : searchIdRet}`);
-      if (!r.ok) return;
-      const { percent, message } = await r.json();
-      const fill   = document.getElementById('progressFill');
-      const pct    = document.getElementById('progressPct');
-      const status = document.getElementById('progressStatus');
-      const eta    = document.getElementById('spinnerEta');
-      // Phase 0: 0–50%, phase 1: 50–100%
-      const combined = searchPhase === 0 ? percent / 2 : 50 + percent / 2;
-      if (fill)   fill.style.width   = `${Math.min(Math.max(combined, 0), 100)}%`;
-      if (pct)    pct.textContent    = `${Math.round(combined)}%`;
-      if (status && message) status.textContent = message;
-      if (eta && combined > 5) {
-        const elapsed = (Date.now() - searchStart) / 1000;
-        const remaining = Math.round(elapsed / combined * (100 - combined));
-        eta.textContent = t('spinner_remaining', remaining);
-      }
-    } catch { /* backend not ready yet */ }
-  }, 600);
-
   try {
-    const resOut = await apiFetch(`${API_BASE}/api/search`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadOut),
-      signal: controller.signal,
+    const { data: dataOut } = await executeSearch(payloadOut, resultsEl, controller, {
+      showEta:           true,
+      progressTransform: pct => pct / 2,       // fase 0: 0–50 %
     });
-    if (!resOut.ok) {
-      resultsEl.innerHTML = renderError(`Error ${resOut.status}`);
-      return;
-    }
-    const dataOut = await resOut.json();
 
-    searchPhase = 1;
     submitBtn.textContent = t('express_searching_ret');
 
-    const resRet = await apiFetch(`${API_BASE}/api/search`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payloadRet),
-      signal: controller.signal,
+    const { data: dataRet } = await executeSearch(payloadRet, resultsEl, controller, {
+      showEta:           true,
+      progressTransform: pct => 50 + pct / 2,  // fase 1: 50–100 %
     });
-    if (!resRet.ok) {
-      resultsEl.innerHTML = renderError(`Error ${resRet.status}`);
-      return;
-    }
-    const dataRet = await resRet.json();
 
     // Active day filter from express panel
     const dayFilter = [...document.querySelectorAll('#exDayBtnsRow .day-btn.active')].map(b => parseInt(b.dataset.day));
@@ -284,10 +245,9 @@ document.getElementById('expressForm').addEventListener('submit', async (e) => {
     if (err.name === 'AbortError') {
       resultsEl.innerHTML = renderError(t('search_cancelled'));
     } else {
-      resultsEl.innerHTML = renderError(t('conn_error_full'));
+      resultsEl.innerHTML = renderError(err.isApiError ? err.message : t('conn_error_full'));
     }
   } finally {
-    clearInterval(progressInterval);
     clearInterval(timerInterval);
     submitBtn.disabled    = false;
     submitBtn.textContent = t('btn_express_search');
