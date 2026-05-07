@@ -378,9 +378,10 @@ function renderCheapGrid() {
     });
   });
 
-  // Bind save + route buttons after render
+  // Bind save + route + return buttons after render
   _bindCheapSaveBtns(grid);
   _bindCheapRouteBtns(grid);
+  _bindCheapReturnBtns(grid);
   startPriceResolution(grid);
 }
 
@@ -435,6 +436,7 @@ function renderCheapCard(v) {
         ${priceBlock}
         <div class="card-footer-right">
           ${v.url ? `<a class="book-btn" href="${escapeHtml(v.url)}" target="_blank" rel="noopener noreferrer" title="${t('book_btn_title')}">${t('book_btn_text')}</a>` : ''}
+          <button class="return-btn" data-id="${escapeHtml(id)}" title="${t('btn_return_title')}">${t('btn_return_short')}</button>
           <button class="save-btn ${savedNow ? 'save-btn-active' : ''}" data-id="${escapeHtml(id)}"
             title="${t(savedNow ? 'save_title_saved' : 'save_title_save')}">
             ${savedNow ? '\u2665' : '\u2661'}
@@ -475,6 +477,16 @@ function _bindCheapSaveBtns(container) {
       btn.classList.toggle('save-btn-active', saved);
       btn.title = t(saved ? 'save_title_saved' : 'save_title_save');
     });
+  });
+}
+
+/* ── "Buscar vuelta" buttons ── */
+function _bindCheapReturnBtns(container) {
+  container.querySelectorAll('.return-btn').forEach(btn => {
+    const id = btn.dataset.id;
+    const v  = chRawData?.vuelos.find(f => flightId(f) === id);
+    if (!v) return;
+    btn.addEventListener('click', () => openReturnModal(v));
   });
 }
 
