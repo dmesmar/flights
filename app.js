@@ -473,7 +473,29 @@ function createAirportSelector(selectorEl, tagsEl, { forceSimple = false } = {})
     const def = typeof CONTINENT_MAPS !== 'undefined' ? CONTINENT_MAPS.find(c => c.id === id) : null;
     const title = apHeader.querySelector('.map-airports-title');
     if (title) title.textContent = t('continent_' + id) || def?.label_es || id;
-    apHeader.querySelector('.map-airports-header-btns').innerHTML = '';
+    const btnsEl = apHeader.querySelector('.map-airports-header-btns');
+    btnsEl.innerHTML = '';
+    const continentDoc = _continentDocs[id];
+    if (continentDoc) {
+      const continentCountries = new Set(
+        [...continentDoc.querySelectorAll('[data-country]')].map(p => p.getAttribute('data-country'))
+      );
+      const continentAirports = AIRPORTS.filter(a => continentCountries.has(a.country));
+      btnsEl.innerHTML =
+        `<button type="button" class="map-sel-all">${t('select_all')}</button>` +
+        `<button type="button" class="map-desel-all">${t('deselect_all')}</button>`;
+      btnsEl.querySelector('.map-sel-all').addEventListener('click', () => {
+        continentAirports.forEach(a => {
+          const allowed = getAllowedFn ? getAllowedFn(a) : true;
+          if (allowed) selected.add(a.iata);
+        });
+        renderTags(); updateTriggerText(); renderContinentAirports(activeContinent, apSearchInput.value); onChangeCb?.();
+      });
+      btnsEl.querySelector('.map-desel-all').addEventListener('click', () => {
+        continentAirports.forEach(a => selected.delete(a.iata));
+        renderTags(); updateTriggerText(); renderContinentAirports(activeContinent, apSearchInput.value); onChangeCb?.();
+      });
+    }
     apSearchWrap.style.display = '';
     apSearchInput.value = '';
     apSearchInput.oninput = () => renderContinentAirports(activeContinent, apSearchInput.value);
@@ -1622,6 +1644,97 @@ async function ensureBackendAwake(statusEl) {
    Lanza Error con .isApiError=true para
    errores de API, o AbortError al cancelar.
 ═══════════════════════════════════════════ */
+
+/**
+ * Versión paralela: lanza una petición por payload simultáneamente y fusiona
+ * los resultados. El progreso en pantalla es el promedio de todos los search_id.
+ *
+ * @param {Object[]} payloads  - array de cuerpos POST; cada uno debe tener su propio search_id
+ * @param {Element}  container
+ * @param {AbortController} controller
+ * @param {Object}   [opts]
+ * @returns {Promise<{data: Object, elapsedMs: number}>}
+ */
+async function executeSearchParallel(payloads, container, controller, {
+  showTimer = false,
+  showEta   = false,
+} = {}) {
+  await ensureBackendAwake(container.querySelector('#progressStatus'));
+
+  const searchStart = Date.now();
+  let timerInterval = null;
+  if (showTimer) {
+    timerInterval = setInterval(() => {
+      const el = container.querySelector('#spinnerTimer');
+      if (el) el.textContent = Math.floor((Date.now() - searchStart) / 1000) + ' s';
+    }, 1000);
+  }
+
+  const progresses = new Array(payloads.length).fill(0);
+  let progressInterval = null;
+
+  try {
+    // Primero lanzamos todos los POSTs en paralelo; el backend registra los
+    // search_ids al recibir la petición, así que solo empezamos a hacer polling
+    // de progreso una vez que todas las peticiones han sido enviadas.
+    const fetchPromises = payloads.map(p =>
+      apiFetch(`${API_BASE}/api/search`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(p),
+        signal:  controller.signal,
+      })
+    );
+
+    // Ahora que los POSTs ya están en vuelo, arrancamos el polling
+    progressInterval = setInterval(async () => {
+      const results = await Promise.all(
+        payloads.map(p =>
+          apiFetch(`${API_BASE}/api/progress?search_id=${p.search_id}`)
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+        )
+      );
+      results.forEach((r, i) => { if (r?.percent != null) progresses[i] = r.percent; });
+      const avg = progresses.reduce((a, b) => a + b, 0) / payloads.length;
+      const fill   = container.querySelector('#progressFill');
+      const pct    = container.querySelector('#progressPct');
+      const status = container.querySelector('#progressStatus');
+      const eta    = container.querySelector('#spinnerEta');
+      if (fill)   fill.style.width   = `${Math.min(Math.max(avg, 0), 100)}%`;
+      if (pct)    pct.textContent    = `${Math.round(avg)}%`;
+      const msg = results.find(r => r?.message)?.message;
+      if (status && msg) status.textContent = msg;
+      if (showEta && eta && avg > 5) {
+        const elapsed   = (Date.now() - searchStart) / 1000;
+        const remaining = Math.round(elapsed / avg * (100 - avg));
+        eta.textContent = t('spinner_remaining', remaining);
+      }
+    }, 600);
+
+    const responses = await Promise.all(fetchPromises);
+    for (const res of responses) {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        const apiErr = new Error(err.detail || `Error ${res.status}`);
+        apiErr.isApiError = true;
+        throw apiErr;
+      }
+    }
+    const dataArr = await Promise.all(responses.map(r => r.json()));
+    const merged = {
+      ...dataArr[0],
+      vuelos:       dataArr.flatMap(d => d.vuelos || []),
+      rutas:        [...new Set(dataArr.flatMap(d => d.rutas || []))],
+      total_vuelos: dataArr.reduce((s, d) => s + (d.total_vuelos || 0), 0),
+    };
+    return { data: merged, elapsedMs: Date.now() - searchStart };
+  } finally {
+    if (progressInterval !== null) clearInterval(progressInterval);
+    if (timerInterval !== null) clearInterval(timerInterval);
+  }
+}
+
 /**
  * @param {Object}   payload            - cuerpo del POST a /api/search (debe incluir search_id)
  * @param {Element}  container          - elemento que contiene el spinner (se usa querySelector)
@@ -1714,16 +1827,20 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
     return;
   }
 
-  const searchId = crypto.randomUUID();
-  const payload = {
-    search_id:    searchId,
-    fecha_ini:    fechaIni.split('-').reverse().join('-'),
-    fecha_fin:    fechaFin.split('-').reverse().join('-'),
-    airport_from: from,
-    airport_to:   to,
-    max_stops:    parseInt(stops),
-    max_results:  parseInt(document.getElementById('maxResults')?.value || '3'),
+  const maxResults = parseInt(document.getElementById('maxResults')?.value || '3');
+  const basePayload = {
+    fecha_ini:  fechaIni.split('-').reverse().join('-'),
+    fecha_fin:  fechaFin.split('-').reverse().join('-'),
+    airport_to: to,
+    max_stops:  parseInt(stops),
+    max_results: maxResults,
   };
+  // Una petición por aeropuerto de origen, lanzadas en paralelo
+  const payloads = from.map(origin => ({
+    ...basePayload,
+    search_id:    crypto.randomUUID(),
+    airport_from: [origin],
+  }));
 
   const resultsEl  = document.getElementById('results');
   const submitBtn  = document.querySelector('.btn-search');
@@ -1737,7 +1854,7 @@ document.getElementById('searchForm').addEventListener('submit', async (e) => {
   document.getElementById('searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
   try {
-    const { data, elapsedMs } = await executeSearch(payload, resultsEl, controller, {
+    const { data, elapsedMs } = await executeSearchParallel(payloads, resultsEl, controller, {
       showTimer: true,
       showEta:   true,
     });

@@ -56,6 +56,7 @@ function updateSavedCount() {
 function renderSavedTab() {
   if (typeof renderSavedExpressRoutes === 'function') renderSavedExpressRoutes();
   renderSavedSearches();
+  renderSavedCheapSearches();
   const list = loadSaved();
   const container = document.getElementById('savedFlights');
 
@@ -407,6 +408,92 @@ function renderSavedSearches() {
     btn.addEventListener('click', () => {
       deleteSavedSearch(btn.dataset.id);
       renderSavedSearches();
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════
+   SAVED CHEAP SEARCHES
+═══════════════════════════════════════════ */
+const SAVED_CHEAP_KEY = 'savedCheapSearches_v1';
+
+function loadSavedCheapSearches() {
+  try { return JSON.parse(localStorage.getItem(SAVED_CHEAP_KEY) || '[]'); }
+  catch { return []; }
+}
+function storeSavedCheapSearches(list) {
+  try {
+    localStorage.setItem(SAVED_CHEAP_KEY, JSON.stringify(list));
+  } catch (e) {
+    alert(t('storage_full'));
+  }
+}
+function saveCheapSnapshot(rawData, params) {
+  const list    = loadSavedCheapSearches();
+  const id      = Date.now().toString(36);
+  const origins = (params.from || []).join(', ');
+  const savedAt = new Date().toLocaleString(t('locale_tag'), { dateStyle: 'short', timeStyle: 'short' });
+  const total   = (rawData.vuelos || []).length;
+  const name    = `${origins} · ${params.fechaIni} → ${params.fechaFin}`;
+  list.unshift({ id, name, savedAt, total, params, data: rawData });
+  storeSavedCheapSearches(list);
+  return id;
+}
+function deleteSavedCheapSearch(id) {
+  storeSavedCheapSearches(loadSavedCheapSearches().filter(s => s.id !== id));
+}
+function renderSavedCheapSearches() {
+  const container = document.getElementById('savedCheapSearches');
+  if (!container) return;
+  const list = loadSavedCheapSearches();
+  if (list.length === 0) { container.innerHTML = ''; return; }
+
+  let html = `<div class="saved-searches-section">
+    <div class="saved-searches-header">
+      <span class="saved-searches-title">${t('saved_cheap_title')}</span>
+    </div>
+    <div class="saved-searches-list">`;
+  for (const s of list) {
+    html += `
+      <div class="saved-search-card" data-id="${s.id}">
+        <div class="ss-info">
+          <span class="ss-name">${escapeHtml(s.name)}</span>
+          <span class="ss-meta">${t('ch_ss_flights_count', s.total, s.savedAt)}</span>
+        </div>
+        <div class="ss-actions">
+          <button class="ss-btn ss-load ss-cheap-restore" data-id="${s.id}" title="${t('ss_load_title')}">${t('ss_load')}</button>
+          <button class="ss-btn ss-dl ss-cheap-dl" data-id="${s.id}">${t('btn_download_json')}</button>
+          <button class="ss-btn ss-del ss-cheap-del" data-id="${s.id}">${t('ss_del')}</button>
+        </div>
+      </div>`;
+  }
+  html += `</div></div>`;
+  container.innerHTML = html;
+
+  container.querySelectorAll('.ss-cheap-restore').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const entry = loadSavedCheapSearches().find(s => s.id === btn.dataset.id);
+      if (!entry) return;
+      chRawData        = entry.data;
+      chSearchedFrom   = entry.params?.from   || [];
+      chSearchedDateIni = entry.params?.fechaIni || '';
+      chSearchedDateFin = entry.params?.fechaFin || '';
+      chAllCollapsed   = false;
+      chGroupByOrigin  = false;
+      document.querySelector('.tab-btn[data-tab="cheap"]').click();
+      renderCheapSection(null);
+    });
+  });
+  container.querySelectorAll('.ss-cheap-dl').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const entry = loadSavedCheapSearches().find(s => s.id === btn.dataset.id);
+      if (entry) downloadResultsJSON({ ...entry.data, rutas: [entry.name] });
+    });
+  });
+  container.querySelectorAll('.ss-cheap-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      deleteSavedCheapSearch(btn.dataset.id);
+      renderSavedCheapSearches();
     });
   });
 }

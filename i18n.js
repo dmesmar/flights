@@ -143,6 +143,11 @@ const I18N = {
     refresh_not_found:  '? No disponible',
     refresh_price_was:  prev => `antes: ${prev}`,
 
+    /* ── Búsquedas baratas guardadas ── */
+    saved_cheap_title:     '💸 Búsquedas Baratas Guardadas',
+    ch_ss_save:            '💾 Guardar búsqueda',
+    ch_ss_flights_count:   (n, date) => `${n} vuelo${n !== 1 ? 's' : ''} · ${date}`,
+
     /* ── Baratos ── */
     tab_cheap_text:           'Baratos',
     cheap_title:              '💸 Vuelos Baratos',
@@ -494,6 +499,11 @@ const I18N = {
     refresh_no_change:  '= No change',
     refresh_not_found:  '? Not available',
     refresh_price_was:  prev => `was: ${prev}`,
+
+    /* ── Saved cheap searches ── */
+    saved_cheap_title:     '💸 Saved Cheap Searches',
+    ch_ss_save:            '💾 Save search',
+    ch_ss_flights_count:   (n, date) => `${n} flight${n !== 1 ? 's' : ''} · ${date}`,
 
     /* ── Baratos ── */
     tab_cheap_text:           'Cheap',

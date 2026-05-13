@@ -99,16 +99,19 @@ document.getElementById('cheapForm').addEventListener('submit', async (e) => {
   submitBtn.disabled    = true;
   submitBtn.textContent = t('btn_searching');
 
-  const searchId = crypto.randomUUID();
-  const payload  = {
-    search_id:    searchId,
+  const basePayload = {
     fecha_ini:    fechaIni.split('-').reverse().join('-'),
     fecha_fin:    fechaFin.split('-').reverse().join('-'),
-    airport_from: from,
     airport_to:   to,
     max_stops:    stops,
     max_results:  50, // fetch plenty to allow filtering (top 5 is applied client-side)
   };
+  // Una petición por aeropuerto de origen, lanzadas en paralelo
+  const payloads = from.map(origin => ({
+    ...basePayload,
+    search_id:    crypto.randomUUID(),
+    airport_from: [origin],
+  }));
 
   const dayFilter = [...document.querySelectorAll('#chDayBtnsRow .day-btn.active')].map(b => parseInt(b.dataset.day));
 
@@ -117,7 +120,7 @@ document.getElementById('cheapForm').addEventListener('submit', async (e) => {
   resultsEl.querySelector('#searchCancelBtn')?.addEventListener('click', () => controller.abort(), { once: true });
 
   try {
-    const { data, elapsedMs } = await executeSearch(payload, resultsEl, controller, {
+    const { data, elapsedMs } = await executeSearchParallel(payloads, resultsEl, controller, {
       showTimer: true,
       showEta:   true,
     });
@@ -163,12 +166,36 @@ function renderCheapSection(elapsedMs) {
     `<div class="cheap-results-header">
        <span class="cheap-results-count" id="chResultsCount"></span>
        <span class="cheap-elapsed">${elapsed}</span>
+       <button type="button" class="filter-reset-btn" id="chSaveSearchBtn">${t('ch_ss_save')}</button>
+       <button type="button" class="filter-reset-btn" id="chDownloadBtn">${t('btn_download_json')}</button>
        <button type="button" class="filter-reset-btn" id="chCollapseAllBtn">${t('cheap_collapse_all')}</button>
      </div>` +
     `<div id="cheapGrid"></div>`;
 
   renderCheapGrid();
   bindCheapFilterEvents();
+
+  document.getElementById('chSaveSearchBtn')?.addEventListener('click', () => {
+    saveCheapSnapshot(chRawData, {
+      from:     chSearchedFrom,
+      fechaIni: chSearchedDateIni,
+      fechaFin: chSearchedDateFin,
+    });
+    const btn = document.getElementById('chSaveSearchBtn');
+    if (btn) { btn.textContent = t('btn_save_done'); btn.disabled = true; }
+    if (!document.getElementById('tab-saved').classList.contains('hidden')) renderSavedCheapSearches();
+  });
+
+  document.getElementById('chDownloadBtn')?.addEventListener('click', () => {
+    const origins = chSearchedFrom.join('_').replace(/[^a-zA-Z0-9_\-]/g, '') || 'baratos';
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `cheap_${origins}_${date}.json`;
+    const blob = new Blob([JSON.stringify(chRawData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  });
 }
 
 function buildCheapFilterBar(airlines, maxPrice) {
